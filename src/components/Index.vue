@@ -13,6 +13,8 @@
 </template>
 
 <script>
+var strftime = require('strftime');
+
 export default {
   name: 'index',
   methods: {
@@ -37,14 +39,15 @@ export default {
               && fileText[i][1].match(/((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})[+-](\d{2})\:?(\d{2}))$/)
               && fileText[i][2].match(/-?\d+(.\d+)?$/)
               && fileText[i][3].match(/1|0$/)) {
-              timestamps.push(fileText[i][1]);
-              values.push(Number(fileText[i][2]));
+              var date = strftime('%Y-%m-%d %H:%M:%S', new Date(fileText[i][1]));
+              timestamps.push(date.toString());
+              values.push(fileText[i][2]);
               labels.push(Number(fileText[i][3]));
               plotDict.push({
-                'id': id,
-                'val': Number(fileText[i][2]),
-                'time': fileText[i][1],
-                'selected': Number(fileText[i][3])
+                'id': id.toString(),
+                'val': Number(fileText[i][2]).toString(),
+                'time': date.toString(),
+                'selected': Number(fileText[i][3]).toString()
               });
               id++;
             } else {
@@ -53,12 +56,14 @@ export default {
               break;
             }
           }
+          var minMax = [Math.max.apply(Math, values), Math.min.apply(Math, values)];
           var plotData = [timestamps, values, labels];
 
           this.$router.push({
             name: 'labeler',
             params: {
-              csvData: JSON.stringify(plotDict),
+              csvData: plotDict,
+              minMax: minMax,
               filename: filename,
               isValid: true
             }

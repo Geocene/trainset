@@ -1,11 +1,11 @@
 <template>
-  <div class="container-fluid" id="plotBox">
+  <!-- <div class="container-fluid" id="plotBox">
     <nav class="navbar navbar-expand-lg fixed-top"> 
       <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET</router-link></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
       </div>
-    </nav>
+    </nav> -->
     <div id="maindiv"></div>
   </div>
 </template>
@@ -17,12 +17,16 @@ import { keybinding } from '../assets/keybinding'
 export default {
 	name: 'labeler',
 	props: {
-		csvData: String,
+		csvData: Array,
+    minMax: Array,
 		filename: String,
 		isValid: Boolean
 	},
 	mounted() {
-		window.PLOTDATA = JSON.parse(this.csvData);
+		window.PLOTDATA = this.csvData;
+    window.view_or_label = "label";
+    window.y_max = this.minMax[0];
+    window.y_min = this.minMax[1];
 		labeller();
 	}
 }
@@ -35,7 +39,7 @@ function labeller () {
   //margins
   var main_margin = {top: 10, right: 10, bottom: 100, left: 40},
   context_margin = {top: 430, right: 10, bottom: 20, left: 40},
-  maindiv_width = $(window).width(),
+  maindiv_width = $('#maindiv').width(),
   width = maindiv_width - main_margin.left - main_margin.right,
   main_height = 500 - main_margin.top - main_margin.bottom,
   context_height = 500 - context_margin.top - context_margin.bottom;
@@ -125,6 +129,7 @@ function labeller () {
 
     //set scales based on loaded data
     main_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
 
     context_xscale.domain(main_xscale.domain());
     context_yscale.domain(main_yscale.domain());
@@ -132,6 +137,7 @@ function labeller () {
     //generate quadmap to handle brushing of the main plot
     data.map(function(d){d.x=main_xscale(d.time);
      d.y=main_yscale(d.val);
+     console.log(d.val + ' ' + main_yscale(d.val));
      return d;});
 
     quadtree=d3.geom.quadtree(data);
@@ -362,3 +368,64 @@ function labeller () {
 
 }
 </script>
+
+<style>
+svg {
+  font: 10px sans-serif;
+  display: block;
+  margin: auto;
+}
+
+.area {
+  fill: black;
+  clip-path: url(#clip);
+}
+
+.line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1.5px;
+  clip-path: url(#clip);
+}
+
+.point {
+  fill: black;
+  stroke: none;
+  clip-path: url(#clip);
+}
+
+.point.selected {
+  fill: red;
+  fill-opacity: 1;
+  stroke: red;
+  clip-path: url(#clip);
+}
+
+.point.training {
+  fill: blue;
+  fill-opacity: 1;
+  stroke: blue;
+  clip-path: url(#clip);
+}
+
+.point.cooking {
+  fill: #15d683;
+  fill-opacity: 1;
+  stroke: #15d683;
+  clip-path: url(#clip);
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.main_brush .extent,
+.context_brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+</style>
