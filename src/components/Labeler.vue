@@ -1,11 +1,13 @@
 <template>
-  <!-- <div class="container-fluid" id="plotBox">
+  <div class="container-fluid" id="plotBox">
     <nav class="navbar navbar-expand-lg fixed-top"> 
       <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET</router-link></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
+        <div class="nav-link">Clear</div>
+        <div class="nav-link">Export</div>
       </div>
-    </nav> -->
+    </nav>
     <div id="maindiv"></div>
   </div>
 </template>
@@ -27,6 +29,7 @@ export default {
     window.view_or_label = "label";
     window.y_max = this.minMax[0];
     window.y_min = this.minMax[1];
+    $('#maindiv').append('<div class="loader"></div>');
 		labeller();
 	}
 }
@@ -137,13 +140,13 @@ function labeller () {
     //generate quadmap to handle brushing of the main plot
     data.map(function(d){d.x=main_xscale(d.time);
      d.y=main_yscale(d.val);
-     console.log(d.val + ' ' + main_yscale(d.val));
      return d;});
 
     quadtree=d3.geom.quadtree(data);
 
     //make the plots
     makeplot(data);
+    $('.loader').css('display', 'none');
 
     //set default extent for context
     Date.prototype.addDays = function(days)
@@ -153,9 +156,9 @@ function labeller () {
       return dat;
     }
 
-    var start_date = context_xscale.domain()[0]
+    var start_date = data[0].time
     if(window.view_or_label=="label"){
-      var end_date = new Date(start_date).addDays(1)
+      var end_date = data[Math.round(data.length / 10)].time
     } else {
       var end_date = new Date(start_date).addDays(7)
     }
@@ -169,7 +172,6 @@ function labeller () {
     brushed_context();
     if(window.view_or_label=="label"){
       update_selection();
-      document.getElementById("next").style.display = 'none';
     } else {
       main.selectAll(".point").classed("training", function(d) { return d.training; });
       context.selectAll(".point").classed("training", function(d) { return d.training; });
@@ -346,7 +348,6 @@ function labeller () {
       //therefore, don't look at children of this node
       return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
     });
-    post(brushed_points);
   }
 
   function update_selection(){
@@ -427,5 +428,23 @@ svg {
   stroke: #fff;
   fill-opacity: .125;
   shape-rendering: crispEdges;
+}
+
+.loader {
+  position: fixed;
+  left: 45%;
+  right: 25%;
+  top: 25%;
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>
