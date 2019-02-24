@@ -23,17 +23,19 @@ export default {
     },
     fileCheck () {
       var fileInput = document.getElementById("upload-file").files.item(0), fileText;
-      var filename = fileInput.name;
+      var filename = fileInput.name.split(".")[0];
       var id = 0;
       var reader = new FileReader();
       var timestamps = [];
       var values = [];
       var labels = [];
       var plotDict = [];
+      var headerStr;
       if (fileInput.name.split('.').pop() == 'csv') {
         reader.readAsBinaryString(fileInput);
         reader.onloadend = () => {
           fileText = $.csv.toArrays(reader.result);
+          headerStr = fileText[0].toString();
           for (var i = 1; i < fileText.length ; i++) {
             if (fileText[i].length == 4 
               && fileText[i][1].match(/((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})[+-](\d{2})\:?(\d{2}))$/)
@@ -65,6 +67,7 @@ export default {
               csvData: plotDict,
               minMax: minMax,
               filename: filename,
+              headerStr: headerStr,
               isValid: true
             }
           });

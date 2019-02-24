@@ -4,8 +4,8 @@
       <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET</router-link></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
-        <div class="nav-link">Clear</div>
-        <div class="nav-link">Export</div>
+        <div class="nav-link" id="clear">Clear</div>
+        <div class="nav-link" id="export">Export</div>
       </div>
     </nav>
     <div id="maindiv"></div>
@@ -22,9 +22,12 @@ export default {
 		csvData: Array,
     minMax: Array,
 		filename: String,
+    headerStr: String,
 		isValid: Boolean
 	},
 	mounted() {
+    window.headerStr = this.headerStr;
+    window.filename = this.filename;
 		window.PLOTDATA = this.csvData;
     window.view_or_label = "label";
     window.y_max = this.minMax[0];
@@ -366,6 +369,26 @@ function labeller () {
     update_selection();
     d3.selectAll(".main_brush").call(main_brush.clear());
   }
+
+  $('#clear').click(function() {
+    main.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
+    context.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
+  });
+
+  $('#export').click(function() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += window.headerStr + "\r\n";
+    data.forEach(function(dataArray){
+      let row = window.filename + ',' + new Date(dataArray.time).toISOString() + ',' + dataArray.val + ',' + dataArray.selected;
+      csvContent += row + "\r\n";
+    });
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", window.filename + "-lablr");
+    document.body.appendChild(link); // Required for FF
+    link.click();
+  });
 
 }
 </script>
