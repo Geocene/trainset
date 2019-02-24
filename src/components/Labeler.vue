@@ -4,6 +4,8 @@
       <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET</router-link></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
+        <div class="nav-link" id="clear">Clear</div>
+        <div class="nav-link" id="export">Export</div>
       </div>
     </nav>
     <div id="maindiv"></div>
@@ -17,12 +19,20 @@ import { keybinding } from '../assets/keybinding'
 export default {
 	name: 'labeler',
 	props: {
-		csvData: String,
+		csvData: Array,
+    minMax: Array,
 		filename: String,
+    headerStr: String,
 		isValid: Boolean
 	},
 	mounted() {
-		window.PLOTDATA = JSON.parse(this.csvData);
+    window.headerStr = this.headerStr;
+    window.filename = this.filename;
+		window.PLOTDATA = this.csvData;
+    window.view_or_label = "label";
+    window.y_max = this.minMax[0];
+    window.y_min = this.minMax[1];
+    $('#maindiv').append('<div class="loader"></div>');
 		labeller();
 	}
 }
@@ -35,7 +45,7 @@ function labeller () {
   //margins
   var main_margin = {top: 10, right: 10, bottom: 100, left: 40},
   context_margin = {top: 430, right: 10, bottom: 20, left: 40},
-  maindiv_width = $(window).width(),
+  maindiv_width = $('#maindiv').width(),
   width = maindiv_width - main_margin.left - main_margin.right,
   main_height = 500 - main_margin.top - main_margin.bottom,
   context_height = 500 - context_margin.top - context_margin.bottom;
@@ -125,6 +135,7 @@ function labeller () {
 
     //set scales based on loaded data
     main_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
 
     context_xscale.domain(main_xscale.domain());
     context_yscale.domain(main_yscale.domain());
@@ -138,6 +149,7 @@ function labeller () {
 
     //make the plots
     makeplot(data);
+    $('.loader').css('display', 'none');
 
     //set default extent for context
     Date.prototype.addDays = function(days)
@@ -147,9 +159,9 @@ function labeller () {
       return dat;
     }
 
-    var start_date = context_xscale.domain()[0]
+    var start_date = data[0].time
     if(window.view_or_label=="label"){
-      var end_date = new Date(start_date).addDays(1)
+      var end_date = data[Math.round(data.length / 10)].time
     } else {
       var end_date = new Date(start_date).addDays(7)
     }
@@ -163,7 +175,6 @@ function labeller () {
     brushed_context();
     if(window.view_or_label=="label"){
       update_selection();
-      document.getElementById("next").style.display = 'none';
     } else {
       main.selectAll(".point").classed("training", function(d) { return d.training; });
       context.selectAll(".point").classed("training", function(d) { return d.training; });
@@ -340,7 +351,6 @@ function labeller () {
       //therefore, don't look at children of this node
       return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
     });
-    post(brushed_points);
   }
 
   function update_selection(){
@@ -360,5 +370,104 @@ function labeller () {
     d3.selectAll(".main_brush").call(main_brush.clear());
   }
 
+  $('#clear').click(function() {
+    main.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
+    context.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
+  });
+
+  $('#export').click(function() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += window.headerStr + "\r\n";
+    data.forEach(function(dataArray){
+      let row = window.filename + ',' + new Date(dataArray.time).toISOString() + ',' + dataArray.val + ',' + dataArray.selected;
+      csvContent += row + "\r\n";
+    });
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", window.filename + "-lablr");
+    document.body.appendChild(link); // Required for FF
+    link.click();
+  });
+
 }
 </script>
+
+<style>
+svg {
+  font: 10px sans-serif;
+  display: block;
+  margin: auto;
+}
+
+.area {
+  fill: black;
+  clip-path: url(#clip);
+}
+
+.line {
+  fill: none;
+  stroke: black;
+  stroke-width: 1.5px;
+  clip-path: url(#clip);
+}
+
+.point {
+  fill: black;
+  stroke: none;
+  clip-path: url(#clip);
+}
+
+.point.selected {
+  fill: red;
+  fill-opacity: 1;
+  stroke: red;
+  clip-path: url(#clip);
+}
+
+.point.training {
+  fill: blue;
+  fill-opacity: 1;
+  stroke: blue;
+  clip-path: url(#clip);
+}
+
+.point.cooking {
+  fill: #15d683;
+  fill-opacity: 1;
+  stroke: #15d683;
+  clip-path: url(#clip);
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.main_brush .extent,
+.context_brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+.loader {
+  position: fixed;
+  left: 45%;
+  right: 25%;
+  top: 25%;
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+</style>
