@@ -9,6 +9,12 @@
       </div>
     </nav>
     <div id="maindiv"></div>
+    <div id="error" style="display: none;">
+      <h5 class="failInfo">Upload Failed</h5>
+      <hr>
+      <div class="failInfo" id="errorMsg">Make sure data is in the TRAINSET format. See help.</div>
+      <button type="button" class="btn btn-light" id="errorOk" @click="errorOk()">Ok</button>
+    </div>
   </div>
 </template>
 
@@ -25,15 +31,27 @@ export default {
     headerStr: String,
 		isValid: Boolean
 	},
+  methods: {
+    errorOk() {
+      this.$router.push({ name: 'home' });
+    }
+  },
 	mounted() {
-    window.headerStr = this.headerStr;
-    window.filename = this.filename;
-		window.PLOTDATA = this.csvData;
-    window.view_or_label = "label";
-    window.y_max = this.minMax[0];
-    window.y_min = this.minMax[1];
-    $('#maindiv').append('<div class="loader"></div>');
-		labeller();
+    if (this.isValid) {
+      window.headerStr = this.headerStr;
+      window.filename = this.filename;
+      window.PLOTDATA = this.csvData;
+      window.view_or_label = "label";
+      window.y_max = this.minMax[0];
+      window.y_min = this.minMax[1];
+      $('#maindiv').append('<div class="loader"></div>');    
+      labeller();
+    } else {
+      $('#clear').hide();
+      $('#export').hide();
+      $('.navbar').css("opacity", "0.5");
+      $('#error').show();
+    }
 	}
 }
 
@@ -469,5 +487,35 @@ svg {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+#error {
+  padding: 5px 15px;
+  border-radius: 15px;
+  background: #D84800;
+  width: 200px;
+  position: fixed;
+  top: 30%;
+  left: 42%;
+}
+
+.failInfo {
+  text-align: left;
+  color: #f4f4f4;
+}
+
+#errorMsg {
+  font-size: 13px;
+}
+
+#errorOk {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 6px 65px;
+}
+
+hr {
+  background: #f4f4f4;
+  margin-top: 0px;
 }
 </style>

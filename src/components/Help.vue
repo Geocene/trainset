@@ -6,6 +6,24 @@
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
       </div>
     </nav>
-    <h3 id="welcome">Template help page</h3>
+    <div id="info">
+	    <h3 class="subh">Help with TRAINSET</h3>
+	    <br><br>
+	    <h5 class="subh">Input data format</h5>
+	    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras et tempus lacus. Mauris a sapien quis arcu venenatis
+lobortis in vel neque. Proin iaculis turpis ex, id viverra dolor condimentum elementum.
+	    <br><br>
+	    <h5 class="subh">Labeling</h5>
+	    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras et tempus lacus. Mauris a sapien quis arcu venenatis
+lobortis in vel neque. Proin iaculis turpis ex, id viverra dolor condimentum elementum.
+	    <br><br>
+	    <h5 class="subh">Exporting</h5>
+	    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras et tempus lacus. Mauris a sapien quis arcu venenatis
+lobortis in vel neque. Proin iaculis turpis ex, id viverra dolor condimentum elementum.
+	    <br><br>
+	    <h5 class="subh">Integrating with SUMSarizer</h5>
+	    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras et tempus lacus. Mauris a sapien quis arcu venenatis
+lobortis in vel neque. Proin iaculis turpis ex, id viverra dolor condimentum elementum.
+    </div>
   </div>
 </template>

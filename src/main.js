@@ -11,8 +11,8 @@ require('script-loader!jquery-csv')
 
 Vue.use(VueRouter)
 const routes = [
-	{ path: '/', component: Index },
-	{ path: '/help', component: Help },
+	{ name: 'home', path: '/', component: Index },
+	{ name: 'help', path: '/help', component: Help },
 	{ name: 'upload', path: '/upload', component: Upload, props: true },
 	{ name: 'labeler', path: '/labeler', component: Labeler, props: true }
 ]
