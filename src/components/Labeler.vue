@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid" id="plotBox">
     <nav class="navbar navbar-expand-lg fixed-top"> 
-      <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET</router-link></h1>
+      <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET</div></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
         <div class="nav-link" id="clear">Clear</div>
@@ -35,6 +35,8 @@
 <script>
 import * as d3 from 'd3'
 import { keybinding } from '../assets/keybinding'
+import { largestTriangleThreeBucket } from 'd3fc-sample';
+
 
 export default {
 	name: 'labeler',
@@ -49,12 +51,20 @@ export default {
     goHome() {
       this.$router.push({ name: 'home' });
     },
+    newHome() {
+      let routeData = this.$router.resolve({ name: 'home' });
+      window.open(routeData.href, '_blank');
+    },
     cancel() {
       $('#clearOk').hide();
+      $('.navbar').css("opacity", "1");
+      $('#maindiv').css("opacity", "1");
       // make non transparent
     },
     cancelUpload() {
       $('#exportComplete').hide();
+      $('.navbar').css("opacity", "1");
+      $('#maindiv').css("opacity", "1");
       // make non transparent
     }
   },
@@ -152,6 +162,14 @@ function labeller () {
   var data;
   var quadtree
   var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+  // var sampler = largestTriangleThreeBucket();
+  // // Configure the x / y value accessors
+  // sampler.x(function (d) { return d.x; })
+  //     .y(function (d) { return d.y; });
+
+  // // Configure the size of the buckets used to downsample the data.
+  // sampler.bucketSize(20);
+  // var sampledData;
 
   function type(d) {
     d.time = parseDate(d.time);
@@ -186,6 +204,9 @@ function labeller () {
      return d;});
 
     quadtree=d3.geom.quadtree(data);
+
+    // // Run the sampler
+    // sampledData = sampler(data);
 
     //make the plots
     makeplot(data);
@@ -348,7 +369,7 @@ function labeller () {
 
     }
 
-  //double check that the last bit didn't push us too far left
+    //double check that the last bit didn't push us too far left
     if((1*currentExtent[0])+offset0<limits[0]){
       shift=0;
       offset0=limits[0]-currentExtent[0];
@@ -412,11 +433,14 @@ function labeller () {
 
   $('#clear').click(function() {
     $('#clearOk').show();
-    // make transparent and non functional links
+    $('.navbar').css("opacity", "0.5");
+    $('#maindiv').css("opacity", "0.5");
   });
 
   $('#ok').click(function() {
     $('#clearOk').hide();
+    $('.navbar').css("opacity", "1");
+    $('#maindiv').css("opacity", "1");
     main.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
     context.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
   });
@@ -435,7 +459,8 @@ function labeller () {
     document.body.appendChild(link); // Required for FF
     link.click();
     $('#exportComplete').show();
-    // make transparent rent and inactive links
+    $('.navbar').css("opacity", "0.5");
+    $('#maindiv').css("opacity", "0.5");
   });
 
 }
@@ -542,7 +567,7 @@ svg {
 #exportComplete {
   padding: 5px 15px;
   border-radius: 15px;
-  background: #D84800;
+  background: #7E4C64;
   width: 200px;
   position: fixed;
   top: 30%;

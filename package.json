@@ -33,6 +33,7 @@
     "cross-env": "^5.0.5",
     "css-loader": "^0.28.7",
     "d3-plugins-dist": "^3.2.0",
+    "d3fc-sample": "^3.0.5",
     "expose-loader": "^0.7.5",
     "file-loader": "^1.1.4",
     "node-sass": "^4.5.3",
