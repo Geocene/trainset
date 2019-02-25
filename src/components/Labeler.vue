@@ -15,6 +15,13 @@
       <div class="failInfo" id="errorMsg">Make sure data is in the TRAINSET format. See help.</div>
       <button type="button" class="btn btn-light" id="errorOk" @click="errorOk()">Ok</button>
     </div>
+    <div id="clearOk" style="display: none;">
+      <h5 class="failInfo">Clear all labels?</h5>
+      <hr>
+      <div class="failInfo" id="errorMsg">All labels from this set will be erased. This cannot be undone</div>
+      <button type="button" class="btn btn-light clearbtn" id="cancel" @click="cancel()">Cancel</button>
+      <button type="button" class="btn btn-light clearbtn" id="ok">Ok</button>
+    </div>
   </div>
 </template>
 
@@ -34,6 +41,10 @@ export default {
   methods: {
     errorOk() {
       this.$router.push({ name: 'home' });
+    },
+    cancel() {
+      $('#clearOk').hide();
+      // make non transparent
     }
   },
 	mounted() {
@@ -389,6 +400,11 @@ function labeller () {
   }
 
   $('#clear').click(function() {
+    $('#clearOk').show();
+  });
+
+  $('#ok').click(function() {
+    $('#clearOk').hide();
     main.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
     context.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
   });
@@ -499,6 +515,16 @@ svg {
   left: 42%;
 }
 
+#clearOk {
+  padding: 5px 15px;
+  border-radius: 15px;
+  background: #D84800;
+  width: 200px;
+  position: fixed;
+  top: 30%;
+  left: 42%;
+}
+
 .failInfo {
   text-align: left;
   color: #f4f4f4;
@@ -509,9 +535,13 @@ svg {
 }
 
 #errorOk {
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin: 10px 0px;
   padding: 6px 65px;
+}
+
+.clearbtn {
+  margin: 10px 5px;
+  padding: 6px 15px;
 }
 
 hr {
