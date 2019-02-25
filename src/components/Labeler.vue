@@ -13,7 +13,7 @@
       <h5 class="failInfo">Upload Failed</h5>
       <hr>
       <div class="failInfo" id="errorMsg">Make sure data is in the TRAINSET format. See help.</div>
-      <button type="button" class="btn btn-light" id="errorOk" @click="errorOk()">Ok</button>
+      <button type="button" class="btn btn-light" id="errorOk" @click="goHome()">Ok</button>
     </div>
     <div id="clearOk" style="display: none;">
       <h5 class="failInfo">Clear all labels?</h5>
@@ -21,6 +21,13 @@
       <div class="failInfo" id="errorMsg">All labels from this set will be erased. This cannot be undone</div>
       <button type="button" class="btn btn-light clearbtn" id="cancel" @click="cancel()">Cancel</button>
       <button type="button" class="btn btn-light clearbtn" id="ok">Ok</button>
+    </div>
+    <div id="exportComplete" style="display: none;">
+      <h5 class="failInfo">Export complete</h5>
+      <hr>
+      <div class="failInfo" id="errorMsg">Upload new data set or continue labeling this one?</div>
+      <button type="button" class="btn btn-light exportBtn" id="continue" @click="cancelUpload()">Continue</button>
+      <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="goHome()">Upload</button>
     </div>
   </div>
 </template>
@@ -39,11 +46,15 @@ export default {
 		isValid: Boolean
 	},
   methods: {
-    errorOk() {
+    goHome() {
       this.$router.push({ name: 'home' });
     },
     cancel() {
       $('#clearOk').hide();
+      // make non transparent
+    },
+    cancelUpload() {
+      $('#exportComplete').hide();
       // make non transparent
     }
   },
@@ -401,6 +412,7 @@ function labeller () {
 
   $('#clear').click(function() {
     $('#clearOk').show();
+    // make transparent and non functional links
   });
 
   $('#ok').click(function() {
@@ -422,6 +434,8 @@ function labeller () {
     link.setAttribute("download", window.filename + "-lablr");
     document.body.appendChild(link); // Required for FF
     link.click();
+    $('#exportComplete').show();
+    // make transparent rent and inactive links
   });
 
 }
@@ -525,6 +539,16 @@ svg {
   left: 42%;
 }
 
+#exportComplete {
+  padding: 5px 15px;
+  border-radius: 15px;
+  background: #D84800;
+  width: 200px;
+  position: fixed;
+  top: 30%;
+  left: 42%;
+}
+
 .failInfo {
   text-align: left;
   color: #f4f4f4;
@@ -537,6 +561,11 @@ svg {
 #errorOk {
   margin: 10px 0px;
   padding: 6px 65px;
+}
+
+.exportBtn {
+  margin: 8px 5px;
+  padding: 5px 5px;
 }
 
 .clearbtn {
