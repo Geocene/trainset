@@ -149,12 +149,12 @@ function labeller () {
 
   //lines
   var main_line = d3.svg.line()
-  .interpolate("monotone")
+  .interpolate("linear")
   .x(function(d) { return main_xscale(d.time); })
   .y(function(d) { return main_yscale(d.val); });
 
   var context_line = d3.svg.line()
-  .interpolate("monotone")
+  .interpolate("linear")
   .x(function(d) { return context_xscale(d.time); })
   .y(function(d) { return context_yscale(d.val); });
 
