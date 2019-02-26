@@ -466,8 +466,8 @@ function labeller () {
         };
     }());
     var filename = window.filename;
-    if (!filename.endsWith('-lablr')) {
-      filename += '-lablr';
+    if (!filename.endsWith('-labeled')) {
+      filename += '-labeled';
     }
     saveData(csvContent, filename + '.csv');
     $('#exportComplete').show();
