@@ -35,7 +35,7 @@
 <script>
 import * as d3 from 'd3'
 import { keybinding } from '../assets/keybinding'
-import { largestTriangleThreeBucket } from 'd3fc-sample';
+// import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
 export default {
@@ -59,13 +59,11 @@ export default {
       $('#clearOk').hide();
       $('.navbar').css("opacity", "1");
       $('#maindiv').css("opacity", "1");
-      // make non transparent
     },
     cancelUpload() {
       $('#exportComplete').hide();
       $('.navbar').css("opacity", "1");
       $('#maindiv').css("opacity", "1");
-      // make non transparent
     }
   },
 	mounted() {
@@ -446,21 +444,47 @@ function labeller () {
   });
 
   $('#export').click(function() {
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += window.headerStr + "\r\n";
+    var csvContent = window.headerStr + '\n';
     data.forEach(function(dataArray){
-      let row = window.filename + ',' + new Date(dataArray.time).toISOString() + ',' + dataArray.val + ',' + dataArray.selected;
-      csvContent += row + "\r\n";
+      var date = new Date(dataArray.time).toISOString();
+      let row = window.filename + ',' + date.substring(0, date.length - 5) + date.charAt(date.length - 1) 
+                + ',' + dataArray.val + ',' + dataArray.selected;
+      csvContent += row + '\n';
     });
-    var encodedUri = encodeURI(csvContent);
-    var link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", window.filename + "-lablr");
-    document.body.appendChild(link); // Required for FF
-    link.click();
+    var saveData = (function () {
+        var a = document.createElement("a");
+        document.body.appendChild(a);
+        a.style = "display: none";
+        return function (data, fileName) {
+            var string = csvContent,
+                blob = new Blob([string], {type: 'text/csv, charset=UTF-8'}),
+                url = window.URL.createObjectURL(blob);
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+    }());
+    var filename = window.filename;
+    if (!filename.endsWith('-lablr')) {
+      filename += '-lablr';
+    }
+    saveData(csvContent, filename + '.csv');
     $('#exportComplete').show();
     $('.navbar').css("opacity", "0.5");
     $('#maindiv').css("opacity", "0.5");
+    // var link = document.createElement("a");
+    // link.style = "display: none";
+    // link.id = "csvDwnLink";
+    // document.body.appendChild(link);
+
+    // window.URL = window.URL || window.webkitURL;
+    // var csv = "\ufeff" + csvContent,
+    //     csvData = 'data:attachment/csv;charset=utf-8,' + encodeURIComponent(csvContent),
+    //     filename = window.filename + '-lablr.csv';
+    // $("#csvDwnLink").attr({'download': filename, 'href': csvData});
+    // $('#csvDwnLink')[0].click();
+    // document.body.removeChild(link);
   });
 
 }
