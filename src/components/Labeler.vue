@@ -9,6 +9,7 @@
       </div>
     </nav>
     <div id="maindiv"></div>
+    <div id="rangeContext"></div>
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
       <hr>
@@ -34,6 +35,8 @@
 
 <script>
 import * as d3 from 'd3'
+import * as dc from 'dc'
+import * as crossfilter from 'crossfilter'
 import { keybinding } from '../assets/keybinding'
 // import { largestTriangleThreeBucket } from 'd3fc-sample';
 
@@ -64,6 +67,71 @@ export default {
       $('#exportComplete').hide();
       $('.navbar').css("opacity", "1");
       $('#maindiv').css("opacity", "1");
+    },
+    newlabeller() {
+      $('.loader').css('display', 'none');
+      var data = window.PLOTDATA;
+      var main = dc.compositeChart("#maindiv");
+      var context = dc.compositeChart("#rangeContext");
+      var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+
+      function type(d) {
+        d.time = parseDate(d.time);
+        d.val = d.val;
+        d.selected = +d.selected;
+        return d;
+      }
+
+      data = data.map(type);
+
+      var ndx = crossfilter(data);
+      var dim1 = ndx.dimension(function(d) {
+            return d.time;
+          });
+      var dim2 = ndx.dimension(function(d) {
+            return [d.time, d.val];
+          });
+      var timeGroup = dim1.group().reduceSum(function(d) { return d.val; });
+      var group2 = dim2.group();
+
+      main.width(1410)
+          .height(500)
+          .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
+          .brushOn(false)
+          .yAxisLabel("Value")
+          .xAxisLabel("Time")
+          .dimension(dim1)
+          .elasticY(true)
+          .mouseZoomable(true)
+          .rangeChart(context)
+          .compose([
+            dc.scatterPlot(main)
+              .dimension(dim2)
+              .group(group2),
+            dc.lineChart(main)
+              .group(timeGroup)
+          ]);
+
+      context.width(1410)
+          .height(100)
+          .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
+          .brushOn(true)
+          .xAxisLabel("Time")
+          .dimension(dim1)
+          .compose([
+            dc.scatterPlot(main)
+              .dimension(dim2)
+              .group(group2),
+            dc.lineChart(main)
+              .group(timeGroup)
+          ]);
+
+      context.on('filtered.dynamic-interval', function(_, filter) {
+            main.group(filter || fullDomain);
+        });
+
+      main.render();
+      context.render();
     }
   },
 	mounted() {
@@ -76,6 +144,8 @@ export default {
       window.y_min = this.minMax[1];
       $('#maindiv').append('<div class="loader"></div>');    
       labeller();
+      // this.newlabeller();
+
     } else {
       $('#clear').hide();
       $('#export').hide();
@@ -203,30 +273,23 @@ function labeller () {
 
     quadtree=d3.geom.quadtree(data);
 
+    var start_date = data[0].time
+    if(window.view_or_label=="label"){
+      if (data.length > 10000) {
+        var end_date = data[1000].time;
+      } else {
+        var end_date = data[Math.round((data.length - 1) / 10)].time;
+      }
+    } 
+
+    var defaultExtent = [start_date,end_date];
+
     // // Run the sampler
     // sampledData = sampler(data);
 
     //make the plots
     makeplot(data);
     $('.loader').css('display', 'none');
-
-    //set default extent for context
-    Date.prototype.addDays = function(days)
-    {
-      var dat = new Date(this.valueOf());
-      dat.setDate(dat.getDate() + days);
-      return dat;
-    }
-
-    var start_date = data[0].time
-    if(window.view_or_label=="label"){
-      var end_date = data[Math.round(data.length / 10)].time
-    } else {
-      var end_date = new Date(start_date).addDays(7)
-    }
-
-
-    var defaultExtent = [start_date,end_date]
 
     svg.select(".context_brush").call(context_brush.extent(defaultExtent));
 
@@ -264,9 +327,12 @@ function labeller () {
       //.call(main_brush.event);
     }
 
+    console.log(main.selectAll(".point"));
+
     main.selectAll(".point")
     .data(data)
     .enter().append("circle")
+    .merge(".point")
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
@@ -276,11 +342,11 @@ function labeller () {
       .on("click", function(point){
           //allow clicking on single points
               point.selected=1-point.selected;
-              post([point])
               update_selection();
           });
 
     }
+
     main.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + main_height + ")")
@@ -321,6 +387,7 @@ function labeller () {
 
 
   function brushed_context() {
+
     main_xscale.domain(context_brush.empty() ? context_xscale.domain() : context_brush.extent());
 
     main.select(".line")
@@ -330,16 +397,12 @@ function labeller () {
     .attr("cx", function(d) { return main_xscale(d.time); });
 
     main.select(".x.axis").call(main_xaxis);
+
     var limits=context_xscale.domain();
     if(context_brush.extent()[1]>=1*context_xscale.domain()[1]){
-      console.log("far right")
-      if(window.view_or_label=="label"){
-        document.getElementById("next").style.display = 'block';
-      }
+      console.log("far right");
     }
   }
-
-
 
   //keyboard functions to change the focus
   function transform_context(shift,scale) {
@@ -419,7 +482,6 @@ function labeller () {
 
   function brushed_main(){
     var extent = main_brush.extent();
-    console.log(extent)
     //point.each(function(d) { d.selected = false; });
     //convert based on context_xscale because this is what quadtree is defined on
     // search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
