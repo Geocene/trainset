@@ -237,8 +237,7 @@ function labeller () {
     d.time = parseDate(d.time);
     d.val = +d.val;
     d.selected = +d.selected;
-    d.x = +d.time;
-    d.y = d.val;
+    
     return d;
   }
 
@@ -264,8 +263,8 @@ function labeller () {
     var sampler = largestTriangleThreeBucket();
     
     // Configure the x / y value accessors
-    sampler.x(function (d) { return d.x; })
-        .y(function (d) { return d.y; });
+    sampler.x(function (d) { return d.time; })
+        .y(function (d) { return d.val; });
 
     // Configure the size of the buckets used to downsample the data.
     // Have at most 1000 context points
