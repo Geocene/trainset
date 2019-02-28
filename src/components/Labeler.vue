@@ -37,7 +37,7 @@
 import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
-import { keybinding } from '../assets/keybinding'
+// import { keybinding } from '../assets/keybinding'
 // import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
@@ -67,72 +67,72 @@ export default {
       $('#exportComplete').hide();
       $('.navbar').css("opacity", "1");
       $('#maindiv').css("opacity", "1");
-    },
-    newlabeller() {
-      $('.loader').css('display', 'none');
-      var data = window.PLOTDATA;
-      var main = dc.compositeChart("#maindiv");
-      var context = dc.compositeChart("#rangeContext");
-      var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
-
-      function type(d) {
-        d.time = parseDate(d.time);
-        d.val = d.val;
-        d.selected = +d.selected;
-        return d;
-      }
-
-      data = data.map(type);
-
-      var ndx = crossfilter(data);
-      var dim1 = ndx.dimension(function(d) {
-            return d.time;
-          });
-      var dim2 = ndx.dimension(function(d) {
-            return [d.time, d.val];
-          });
-      var timeGroup = dim1.group().reduceSum(function(d) { return d.val; });
-      var group2 = dim2.group();
-
-      main.width(1410)
-          .height(500)
-          .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
-          .brushOn(false)
-          .yAxisLabel("Value")
-          .xAxisLabel("Time")
-          .dimension(dim1)
-          .elasticY(true)
-          .mouseZoomable(true)
-          .rangeChart(context)
-          .compose([
-            dc.scatterPlot(main)
-              .dimension(dim2)
-              .group(group2),
-            dc.lineChart(main)
-              .group(timeGroup)
-          ]);
-
-      context.width(1410)
-          .height(100)
-          .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
-          .brushOn(true)
-          .xAxisLabel("Time")
-          .dimension(dim1)
-          .compose([
-            dc.scatterPlot(main)
-              .dimension(dim2)
-              .group(group2),
-            dc.lineChart(main)
-              .group(timeGroup)
-          ]);
-
-      context.on('filtered.dynamic-interval', function(_, filter) {
-            main.group(filter || fullDomain);
-        });
-
-      main.render();
-      context.render();
     }
+    // newlabeller() {
+      // $('.loader').css('display', 'none');
+      // var data = window.PLOTDATA;
+      // var main = dc.compositeChart("#maindiv");
+      // var context = dc.compositeChart("#rangeContext");
+      // var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+
+      // function type(d) {
+      //   d.time = parseDate(d.time);
+      //   d.val = d.val;
+      //   d.selected = +d.selected;
+      //   return d;
+      // }
+
+      // data = data.map(type);
+
+      // var ndx = crossfilter(data);
+      // var dim1 = ndx.dimension(function(d) {
+      //       return d.time;
+      //     });
+      // var dim2 = ndx.dimension(function(d) {
+      //       return [d.time, d.val];
+      //     });
+      // var timeGroup = dim1.group().reduceSum(function(d) { return d.val; });
+      // var group2 = dim2.group();
+
+      // main.width(1410)
+      //     .height(500)
+      //     .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
+      //     .brushOn(false)
+      //     .yAxisLabel("Value")
+      //     .xAxisLabel("Time")
+      //     .dimension(dim1)
+      //     .elasticY(true)
+      //     .mouseZoomable(true)
+      //     .rangeChart(context)
+      //     .compose([
+      //       dc.scatterPlot(main)
+      //         .dimension(dim2)
+      //         .group(group2),
+      //       dc.lineChart(main)
+      //         .group(timeGroup)
+      //     ]);
+
+      // context.width(1410)
+      //     .height(100)
+      //     .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
+      //     .brushOn(true)
+      //     .xAxisLabel("Time")
+      //     .dimension(dim1)
+      //     .compose([
+      //       dc.scatterPlot(main)
+      //         .dimension(dim2)
+      //         .group(group2),
+      //       dc.lineChart(main)
+      //         .group(timeGroup)
+      //     ]);
+
+      // context.on('filtered.dynamic-interval', function(_, filter) {
+      //       main.group(filter || fullDomain);
+      //   });
+
+      // main.render();
+      // context.render();
+    // }
   },
 	mounted() {
     if (this.isValid) {
@@ -169,16 +169,16 @@ function labeller () {
   context_height = 500 - context_margin.top - context_margin.bottom;
 
   //scales
-  var main_xscale = d3.time.scale().range([0, width]),
-  context_xscale = d3.time.scale().range([0, width]),
-  main_yscale = d3.scale.linear().range([main_height, 0]),
-  context_yscale = d3.scale.linear().range([context_height, 0]);
+  var main_xscale = d3.scaleTime().range([0, width]),
+  context_xscale = d3.scaleTime().range([0, width]),
+  main_yscale = d3.scaleLinear().range([main_height, 0]),
+  context_yscale = d3.scaleLinear().range([context_height, 0]);
 
   //axes
   //can adjust multiscale time ticks: http://bl.ocks.org/mbostock/4149176
-  var main_xaxis = d3.svg.axis().scale(main_xscale).orient("bottom"),
-  context_xaxis = d3.svg.axis().scale(context_xscale).orient("bottom"),
-  yaxis = d3.svg.axis().scale(main_yscale).orient("left");
+  var main_xaxis = d3.axisBottom(main_xscale),
+  context_xaxis = d3.axisBottom(context_xscale),
+  yaxis = d3.axisLeft(main_yscale);
 
   //plotting areas
   var svg = d3.select("#maindiv").append("svg")
@@ -206,30 +206,32 @@ function labeller () {
   .attr("transform", "translate(" + context_margin.left + "," + context_margin.top + ")");
 
   //brushes
-  var main_brush = d3.svg.brush()
-  .x(main_xscale)
-  .y(main_yscale)
-  .on("brushend", brushed_main);
+  var main_brush = d3.brush()
+  .extent([[0,0], [width, main_height]])
+  .on("end", brushed_main);
 
-  var context_brush = d3.svg.brush()
-  .x(context_xscale)
+  var context_brush = d3.brushX()
+  .extent([[0,0],[width, context_height]])
   .on("brush", brushed_context);
 
   //lines
-  var main_line = d3.svg.line()
-  .interpolate("linear")
+  var main_line = d3.line()
+  .curve(d3.curveLinear)
   .x(function(d) { return main_xscale(d.time); })
   .y(function(d) { return main_yscale(d.val); });
 
-  var context_line = d3.svg.line()
-  .interpolate("linear")
+  var context_line = d3.line()
+  .curve(d3.curveLinear)
   .x(function(d) { return context_xscale(d.time); })
   .y(function(d) { return context_yscale(d.val); });
 
   //load data and adjust scales
+  var conBrush;
+  var mainBrush;
   var data;
-  var quadtree
-  var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+  var quadtree;
+  var quadData;
+  var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
   // var sampler = largestTriangleThreeBucket();
   // // Configure the x / y value accessors
   // sampler.x(function (d) { return d.x; })
@@ -255,10 +257,8 @@ function labeller () {
   }
 
   function init () {
-
     data = window.PLOTDATA;
     data = data.map(type);
-
     //set scales based on loaded data
     main_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
     main_yscale.domain(pad_extent([window.y_min, window.y_max]));
@@ -267,11 +267,25 @@ function labeller () {
     context_yscale.domain(main_yscale.domain());
 
     //generate quadmap to handle brushing of the main plot
-    data.map(function(d){d.x=main_xscale(d.time);
+    quadData = data.map(function(d){d.x=main_xscale(d.time);
      d.y=main_yscale(d.val);
-     return d;});
+     return d});
 
-    quadtree=d3.geom.quadtree(data);
+
+    quadtree=d3.quadtree()
+              .x(function(d) { return d.x; })
+              .y(function(d) { return d.y; })
+              .extent([[0,0], [width+1, main_height+1]])
+              .addAll(data);
+
+    // svg.selectAll(".node")
+    //   .data(nodes(quadtree))
+    //   .enter().append("rect")
+    //     .attr("class", "node")
+    //     .attr("x", function(d) { return d.x0; })
+    //     .attr("y", function(d) { return d.y0; })
+    //     .attr("width", function(d) { return d.y1 - d.y0; })
+    //     .attr("height", function(d) { return d.x1 - d.x0; });
 
     var start_date = data[0].time
     if(window.view_or_label=="label"){
@@ -291,21 +305,21 @@ function labeller () {
     makeplot(data);
     $('.loader').css('display', 'none');
 
-    svg.select(".context_brush").call(context_brush.extent(defaultExtent));
+    // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
 
-    //run brushing functions to make sure everything highlighted right
-    brushed_context();
-    if(window.view_or_label=="label"){
-      update_selection();
-    } else {
-      main.selectAll(".point").classed("training", function(d) { return d.training; });
-      context.selectAll(".point").classed("training", function(d) { return d.training; });
+    // //run brushing functions to make sure everything highlighted right
+    // brushed_context();
+    // if(window.view_or_label=="label"){
+    //   update_selection();
+    // } else {
+    //   main.selectAll(".point").classed("training", function(d) { return d.training; });
+    //   context.selectAll(".point").classed("training", function(d) { return d.training; });
 
-      main.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-      context.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-    }
+    //   main.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
+    //   context.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
+    // }
 
-    window.view_or_label = "label";
+    // window.view_or_label = "label";
 
   }
 
@@ -320,32 +334,27 @@ function labeller () {
     .datum(data)
     .attr("class", "line")
     .attr("d", main_line);
-    if(window.view_or_label=="label"){
-      main.append("g")
-      .attr("class", "main_brush")
-      .call(main_brush);
-      //.call(main_brush.event);
-    }
+    
+    mainBrush = main.append("g")
+    .attr("class", "main_brush")
+    .call(main_brush);
+    //.call(main_brush.event);
 
     console.log(main.selectAll(".point"));
 
     main.selectAll(".point")
     .data(data)
     .enter().append("circle")
-    .merge(".point")
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
     .attr("r", 4);
-    if(window.view_or_label=="label"){
-      main.selectAll(".point")
-      .on("click", function(point){
+    main.selectAll(".point")
+    .on("click", function(point){
           //allow clicking on single points
-              point.selected=1-point.selected;
-              update_selection();
-          });
-
-    }
+          point.selected=1-point.selected;
+          update_selection();
+        });
 
     main.append("g")
     .attr("class", "x axis")
@@ -376,19 +385,25 @@ function labeller () {
     .call(context_xaxis);
 
 
-    context.append("g")
+    conBrush = context.append("g")
     .attr("class", "context_brush")
-    .call(context_brush)
-    .selectAll("rect")
-    .attr("y", -6)
-    .attr("height", context_height + 7);
+    .call(context_brush);
   }
 
-
+  // Collapse the quadtree into an array of rectangles.
+  function nodes(quadtree) {
+    var nodes = [];
+    quadtree.visit(function(node, x0, y0, x1, y1) {
+      node.x0 = x0, node.y0 = y0;
+      node.x1 = x1, node.y1 = y1;
+      nodes.push(node);
+    });
+    return nodes;
+  }
 
   function brushed_context() {
-
-    main_xscale.domain(context_brush.empty() ? context_xscale.domain() : context_brush.extent());
+    var s = d3.brushSelection(conBrush.node()) || context_xscale.range();
+    main_xscale.domain(s.map(context_xscale.invert, context_xscale));
 
     main.select(".line")
     .attr("d", main_line);
@@ -452,28 +467,42 @@ function labeller () {
 
   }
 
-  d3.select('body').call(d3.keybinding()
-      .on('←', transform_wrapper(-1,0))
-      .on('→', transform_wrapper(1,0))
-      .on('↑', transform_wrapper(0,-1))
-      .on('↓', transform_wrapper(0,1)));
+  // d3.select('body').call(d3.keybinding()
+  //     .on('←', transform_wrapper(-1,0))
+  //     .on('→', transform_wrapper(1,0))
+  //     .on('↑', transform_wrapper(0,-1))
+  //     .on('↓', transform_wrapper(0,1)));
 
   // Find the nodes within the specified rectangle.
-  function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
-    var brushed_points = [];
-    quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
-      var p = node.point;
-      if (p){
-        //select based on xor (so brushing toggles all points under brush)
-        p.selected = p.selected ^ ((p.x >= brush_xmin) && (p.x <= brush_xmax) && (p.y >= brush_ymin) && (p.y <= brush_ymax));
-            brushed_points.push(p);
-        //post(p);
+  function search(quadtree, x0, y0, x3, y3) {
+    quadtree.visit(function(node, x1, y1, x2, y2) {
+      if (!node.length) {
+        do {
+          var d = node.data;
+          d.selected = d.selected ^ ((d.x >= x1) && (d.x <= x2) && (d.y >= y1) && (d.y <= y2));
+        } while (node = node.next);
       }
-      //true if brush and quadtree rectangle don't over lap -- we didn't brush anything in here.
-      //therefore, don't look at children of this node
-      return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
+      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
     });
   }
+
+  // Find the nodes within the specified rectangle.
+  // function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+  //   var brushed_points = [];
+  //   quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
+  //     console.log('visiting ' + node);
+  //     var p = node.point;
+  //     if (p){
+  //       //select based on xor (so brushing toggles all points under brush)
+  //       p.selected = p.selected ^ ((p.x >= brush_xmin) && (p.x <= brush_xmax) && (p.y >= brush_ymin) && (p.y <= brush_ymax));
+  //           brushed_points.push(p);
+  //       //post(p);
+  //     }
+  //     //true if brush and quadtree rectangle don't over lap -- we didn't brush anything in here.
+  //     //therefore, don't look at children of this node
+  //     return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
+  //   });
+  // }
 
   function update_selection(){
     main.selectAll(".point").classed("selected", function(d) { return d.selected; });
@@ -481,14 +510,17 @@ function labeller () {
   }
 
   function brushed_main(){
-    var extent = main_brush.extent();
+    var extent = d3.brushSelection(mainBrush.node());
+    if (extent === null) {
+      return;
+    }
     //point.each(function(d) { d.selected = false; });
     //convert based on context_xscale because this is what quadtree is defined on
     // search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
-    search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[1][1]), context_xscale(extent[1][0]), main_yscale(extent[0][1]));
+    search(quadtree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
     update_selection();
-    d3.selectAll(".main_brush").call(main_brush.clear());
+    d3.selectAll(".main_brush").call(main_brush.move, null);
   }
 
   $('#clear').click(function() {
