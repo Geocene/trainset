@@ -103,21 +103,6 @@ export default {
           }
         });
       }
-      
-      // check valid file
-      // redirect to relevant page
-      // if (fileInput.name.split('.').pop() == 'csv'
-      //   /* && check if valid formed time-series csv */) {
-      //   this.$router.push({
-      //     path: '/upload',
-      //     params: {
-      //       csvData: fileInput,
-      //       isValid: true
-      //     }
-      //   });
-      // } else {
-      //   this.$router.push('/fail')
-      // }
     }
   }
 };

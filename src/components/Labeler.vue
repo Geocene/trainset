@@ -38,7 +38,7 @@ import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
 // import { keybinding } from '../assets/keybinding'
-// import { largestTriangleThreeBucket } from 'd3fc-sample';
+import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
 export default {
@@ -68,71 +68,6 @@ export default {
       $('.navbar').css("opacity", "1");
       $('#maindiv').css("opacity", "1");
     }
-    // newlabeller() {
-      // $('.loader').css('display', 'none');
-      // var data = window.PLOTDATA;
-      // var main = dc.compositeChart("#maindiv");
-      // var context = dc.compositeChart("#rangeContext");
-      // var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
-
-      // function type(d) {
-      //   d.time = parseDate(d.time);
-      //   d.val = d.val;
-      //   d.selected = +d.selected;
-      //   return d;
-      // }
-
-      // data = data.map(type);
-
-      // var ndx = crossfilter(data);
-      // var dim1 = ndx.dimension(function(d) {
-      //       return d.time;
-      //     });
-      // var dim2 = ndx.dimension(function(d) {
-      //       return [d.time, d.val];
-      //     });
-      // var timeGroup = dim1.group().reduceSum(function(d) { return d.val; });
-      // var group2 = dim2.group();
-
-      // main.width(1410)
-      //     .height(500)
-      //     .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
-      //     .brushOn(false)
-      //     .yAxisLabel("Value")
-      //     .xAxisLabel("Time")
-      //     .dimension(dim1)
-      //     .elasticY(true)
-      //     .mouseZoomable(true)
-      //     .rangeChart(context)
-      //     .compose([
-      //       dc.scatterPlot(main)
-      //         .dimension(dim2)
-      //         .group(group2),
-      //       dc.lineChart(main)
-      //         .group(timeGroup)
-      //     ]);
-
-      // context.width(1410)
-      //     .height(100)
-      //     .x(d3.time.scale().domain([new Date(data[0].time), new Date(data[data.length-1].time)]))
-      //     .brushOn(true)
-      //     .xAxisLabel("Time")
-      //     .dimension(dim1)
-      //     .compose([
-      //       dc.scatterPlot(main)
-      //         .dimension(dim2)
-      //         .group(group2),
-      //       dc.lineChart(main)
-      //         .group(timeGroup)
-      //     ]);
-
-      // context.on('filtered.dynamic-interval', function(_, filter) {
-      //       main.group(filter || fullDomain);
-      //   });
-
-      // main.render();
-      // context.render();
-    // }
   },
 	mounted() {
     if (this.isValid) {
@@ -212,7 +147,7 @@ function labeller () {
 
   var context_brush = d3.brushX()
   .extent([[0,0],[width, context_height]])
-  .on("brush", brushed_context);
+  .on("end", brushed_context);
 
   //lines
   var main_line = d3.line()
@@ -233,14 +168,13 @@ function labeller () {
   var quadData;
   var defaultExtent;
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-  // var sampler = largestTriangleThreeBucket();
-  // // Configure the x / y value accessors
-  // sampler.x(function (d) { return d.x; })
-  //     .y(function (d) { return d.y; });
+  var sampler = largestTriangleThreeBucket();
+  // Configure the x / y value accessors
+  sampler.x(function (d) { return d.x; })
+      .y(function (d) { return d.y; });
 
-  // // Configure the size of the buckets used to downsample the data.
-  // sampler.bucketSize(20);
-  // var sampledData;
+  // Configure the size of the buckets used to downsample the data.
+  sampler.bucketSize(3);
 
   function type(d) {
     d.time = parseDate(d.time);
@@ -288,9 +222,6 @@ function labeller () {
 
     defaultExtent = [start_date,end_date].map(function(d) { return context_xscale(d); });
 
-    // // Run the sampler
-    // sampledData = sampler(data);
-
     //make the plots
     makeplot(data);
     $('.loader').css('display', 'none');
@@ -299,23 +230,21 @@ function labeller () {
 
     // //run brushing functions to make sure everything highlighted right
     // brushed_context();
-    // if(window.view_or_label=="label"){
-    //   update_selection();
-    // } else {
-    //   main.selectAll(".point").classed("training", function(d) { return d.training; });
-    //   context.selectAll(".point").classed("training", function(d) { return d.training; });
-
-    //   main.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-    //   context.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-    // }
-
-    // window.view_or_label = "label";
+    // update_selection();
 
   }
 
   $(function () {
    init();
   });
+  function createInView(domain) {
+    function inView(d) {
+      var dom = domain.map(function(d) { return context_xscale(d); });
+      return d.x >= dom[0] && d.x <= dom[1];
+    }
+    return inView;
+  }
+  
 
   //inital plotting function
   function makeplot(data) {
@@ -331,7 +260,7 @@ function labeller () {
     //.call(main_brush.event);
 
     main.selectAll(".point")
-    .data(data)
+    .data(data.filter(function(d) { return d.x >= defaultExtent[0] && d.x <= defaultExtent[1]; }))
     .enter().append("circle")
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
@@ -376,8 +305,18 @@ function labeller () {
     conBrush = context.append("g")
     .attr("class", "context_brush")
     .call(context_brush);
+
     d3.selectAll(".context_brush").call(context_brush.move, defaultExtent);
   }
+
+  // function limit_context() {
+  //   var s = d3.brushSelection(conBrush.node()).map(context_xscale.invert, context_xscale);
+  //   var brushData = data.filter(createInView(s));
+  //   if (brushData.length >= 1000) {
+  //     var firstIndex = data.map(function(d) { return d.time; }).indexOf(s[0]);
+  //     d3.selectAll(".context_brush").call(context_brush.move, [data[firstIndex], data[firstIndex+1000]].map(context_xscale));
+  //   }
+  // }
 
   function brushed_context() {
     var s;
@@ -393,6 +332,23 @@ function labeller () {
 
     main.selectAll(".point")
     .attr("cx", function(d) { return main_xscale(d.time); });
+
+    var inView = createInView(main_xscale.domain());
+    var point = main.selectAll(".point").data(data.filter(inView));
+
+    point.enter().append("circle")
+      .attr("class", "point")
+      .attr("cx", function(d) { return main_xscale(d.time); })
+      .attr("cy", function(d) { return main_yscale(d.val); })
+      .attr("r", 4)
+      .merge(point);
+    point.attr("cx", function(d) { return main_xscale(d.time); })
+      .attr("class", "point")
+      .attr("cx", function(d) { return main_xscale(d.time); })
+      .attr("cy", function(d) { return main_yscale(d.val); })
+      .attr("r", 4)
+      .merge(point);
+    point.exit().remove();
 
     main.select(".x.axis").call(main_xaxis);
 
@@ -457,33 +413,15 @@ function labeller () {
   //     .on('↓', transform_wrapper(0,1)));
 
   // Find the nodes within the specified rectangle.
-  function search(quadtree, x0, y0, x3, y3) {
-    quadtree.visit(function(node, x1, y1, x2, y2) {
+  function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+    quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
       var d = node.data;
       if (d) {
-        d.selected = d.selected ^ ((d.x >= x0) && (d.x <= x3) && (d.y >= y0) && (d.y <= y3));
+        d.selected = d.selected ^ ((d.x >= brush_xmin) && (d.x <= brush_xmax) && (d.y >= brush_ymin) && (d.y <= brush_ymax));
       }
-      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+      return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
     });
   }
-
-  // Find the nodes within the specified rectangle.
-  // function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
-  //   var brushed_points = [];
-  //   quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
-  //     console.log('visiting ' + node);
-  //     var p = node.point;
-  //     if (p){
-  //       //select based on xor (so brushing toggles all points under brush)
-  //       p.selected = p.selected ^ ((p.x >= brush_xmin) && (p.x <= brush_xmax) && (p.y >= brush_ymin) && (p.y <= brush_ymax));
-  //           brushed_points.push(p);
-  //       //post(p);
-  //     }
-  //     //true if brush and quadtree rectangle don't over lap -- we didn't brush anything in here.
-  //     //therefore, don't look at children of this node
-  //     return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
-  //   });
-  // }
 
   function update_selection(){
     main.selectAll(".point").classed("selected", function(d) { return d.selected; });
@@ -495,14 +433,11 @@ function labeller () {
     if (extent === null) {
       return;
     }
-    //point.each(function(d) { d.selected = false; });
-    //convert based on context_xscale because this is what quadtree is defined on
-    // search(quadtree, main_xscale(extent[0][0]), main_yscale(extent[0][1]), main_xscale(extent[1][0]), main_yscale(extent[1][1]));
     extent = extent.map(function(d) { return [main_xscale.invert(d[0]), main_yscale.invert(d[1])]; });
-    search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
-    // search(quadtree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
+    search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
     update_selection();
+
     d3.selectAll(".main_brush").call(main_brush.move, null);
   }
 
@@ -550,18 +485,6 @@ function labeller () {
     $('#exportComplete').show();
     $('.navbar').css("opacity", "0.5");
     $('#maindiv').css("opacity", "0.5");
-    // var link = document.createElement("a");
-    // link.style = "display: none";
-    // link.id = "csvDwnLink";
-    // document.body.appendChild(link);
-
-    // window.URL = window.URL || window.webkitURL;
-    // var csv = "\ufeff" + csvContent,
-    //     csvData = 'data:attachment/csv;charset=utf-8,' + encodeURIComponent(csvContent),
-    //     filename = window.filename + '-lablr.csv';
-    // $("#csvDwnLink").attr({'download': filename, 'href': csvData});
-    // $('#csvDwnLink')[0].click();
-    // document.body.removeChild(link);
   });
 
 }
