@@ -504,8 +504,15 @@ function labeller () {
     $('#clearOk').hide();
     $('.navbar').css("opacity", "1");
     $('#maindiv').css("opacity", "1");
-    main.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
-    context.selectAll(".point").classed("selected", function(d) { d.selected = 0; return d.selected; });
+    quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
+      if (!node.length) {
+        do {
+          node.data.selected = 0;
+        } while (node = node.next);
+      }
+      return false;
+    });
+    update_selection();
   });
 
   $('#export').click(function() {
