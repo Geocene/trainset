@@ -231,6 +231,7 @@ function labeller () {
   var data;
   var quadtree;
   var quadData;
+  var defaultExtent;
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
   // var sampler = largestTriangleThreeBucket();
   // // Configure the x / y value accessors
@@ -275,28 +276,17 @@ function labeller () {
     quadtree=d3.quadtree()
               .x(function(d) { return d.x; })
               .y(function(d) { return d.y; })
-              .extent([[0,0], [width+1, main_height+1]])
+              .extent([[-1,-1], [width+1, main_height+1]])
               .addAll(data);
 
-    // svg.selectAll(".node")
-    //   .data(nodes(quadtree))
-    //   .enter().append("rect")
-    //     .attr("class", "node")
-    //     .attr("x", function(d) { return d.x0; })
-    //     .attr("y", function(d) { return d.y0; })
-    //     .attr("width", function(d) { return d.y1 - d.y0; })
-    //     .attr("height", function(d) { return d.x1 - d.x0; });
-
     var start_date = data[0].time
-    if(window.view_or_label=="label"){
-      if (data.length > 10000) {
-        var end_date = data[1000].time;
-      } else {
-        var end_date = data[Math.round((data.length - 1) / 10)].time;
-      }
-    } 
+    if (data.length > 10000) {
+      var end_date = data[1000].time;
+    } else {
+      var end_date = data[Math.round((data.length - 1) / 10)].time;
+    }
 
-    var defaultExtent = [start_date,end_date];
+    defaultExtent = [start_date,end_date].map(function(d) { return context_xscale(d); });
 
     // // Run the sampler
     // sampledData = sampler(data);
@@ -339,8 +329,6 @@ function labeller () {
     .attr("class", "main_brush")
     .call(main_brush);
     //.call(main_brush.event);
-
-    console.log(main.selectAll(".point"));
 
     main.selectAll(".point")
     .data(data)
@@ -388,21 +376,16 @@ function labeller () {
     conBrush = context.append("g")
     .attr("class", "context_brush")
     .call(context_brush);
-  }
-
-  // Collapse the quadtree into an array of rectangles.
-  function nodes(quadtree) {
-    var nodes = [];
-    quadtree.visit(function(node, x0, y0, x1, y1) {
-      node.x0 = x0, node.y0 = y0;
-      node.x1 = x1, node.y1 = y1;
-      nodes.push(node);
-    });
-    return nodes;
+    d3.selectAll(".context_brush").call(context_brush.move, defaultExtent);
   }
 
   function brushed_context() {
-    var s = d3.brushSelection(conBrush.node()) || context_xscale.range();
+    var s;
+    if (d3.event.selection === null) {
+      s = context_xscale.range();
+    } else {
+      s = d3.brushSelection(conBrush.node());
+    }
     main_xscale.domain(s.map(context_xscale.invert, context_xscale));
 
     main.select(".line")
@@ -476,11 +459,9 @@ function labeller () {
   // Find the nodes within the specified rectangle.
   function search(quadtree, x0, y0, x3, y3) {
     quadtree.visit(function(node, x1, y1, x2, y2) {
-      if (!node.length) {
-        do {
-          var d = node.data;
-          d.selected = d.selected ^ ((d.x >= x1) && (d.x <= x2) && (d.y >= y1) && (d.y <= y2));
-        } while (node = node.next);
+      var d = node.data;
+      if (d) {
+        d.selected = d.selected ^ ((d.x >= x0) && (d.x <= x3) && (d.y >= y0) && (d.y <= y3));
       }
       return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
     });
@@ -516,8 +497,10 @@ function labeller () {
     }
     //point.each(function(d) { d.selected = false; });
     //convert based on context_xscale because this is what quadtree is defined on
-    // search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
-    search(quadtree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
+    // search(quadtree, main_xscale(extent[0][0]), main_yscale(extent[0][1]), main_xscale(extent[1][0]), main_yscale(extent[1][1]));
+    extent = extent.map(function(d) { return [main_xscale.invert(d[0]), main_yscale.invert(d[1])]; });
+    search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
+    // search(quadtree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
 
     update_selection();
     d3.selectAll(".main_brush").call(main_brush.move, null);
