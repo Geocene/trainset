@@ -11,8 +11,8 @@
           <div class="nav-link dropdown-toggle" id="brush" data-toggle="dropdown">Brush</div>
           <div class="dropdown-menu">
             <div class="dropdown-item active">Invert</div>
-            <div class="dropdown-item">Cooking</div>
-            <div class="dropdown-item">Not Cooking</div>
+            <div class="dropdown-item">Label True</div>
+            <div class="dropdown-item">Label False</div>
           </div>
         </li>
         <div class="nav-link" id="export">Export</div>
@@ -47,7 +47,7 @@
 import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
-// import { keybinding } from '../assets/keybinding'
+// import * as keybinding from './keybinding'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
@@ -88,7 +88,7 @@ export default {
       window.y_max = this.minMax[0];
       window.y_min = this.minMax[1];
       $('#maindiv').append('<div class="loader"></div>');
-      $('#maindiv').css("padding", "50px 150px");    
+      $('#maindiv').css("padding", "50px 150px");
       labeller();
       // this.newlabeller();
 
@@ -167,7 +167,8 @@ function labeller () {
 
   var context_brush = d3.brushX()
   .extent([[0,0],[width, context_height]])
-  .on("end", brushed_context);
+  .on("end", brushed_context)
+  .on("brush", limit_context);
 
   //lines
   var main_line = d3.line()
@@ -266,7 +267,7 @@ function labeller () {
   function createInView(domain) {
     function inView(d) {
       var dom = domain.map(function(d) { return context_xscale(d); });
-      return d.x >= dom[0] && d.x <= dom[1];
+      return context_xscale(d.x) >= dom[0] && context_xscale(d.x) <= dom[1];
     }
     return inView;
   }
@@ -369,14 +370,14 @@ function labeller () {
 
   }
 
-  // function limit_context() {
-  //   var s = d3.brushSelection(conBrush.node()).map(context_xscale.invert, context_xscale);
-  //   var brushData = data.filter(createInView(s));
-  //   if (brushData.length >= 1000) {
-  //     var firstIndex = data.map(function(d) { return d.time; }).indexOf(s[0]);
-  //     d3.selectAll(".context_brush").call(context_brush.move, [data[firstIndex], data[firstIndex+1000]].map(context_xscale));
-  //   }
-  // }
+  function limit_context() {
+    var s = d3.brushSelection(conBrush.node()).map(context_xscale.invert, context_xscale);
+    var brushData = data.filter(createInView(s));
+    if (brushData.length >= 2000) {
+      var firstIndex = data.map(function(d) { return d.time; }).indexOf(s[0]);
+      // d3.selectAll(".context_brush").call(context_brush.move, [data[firstIndex], data[firstIndex+2000]].map(context_xscale));
+    }
+  }
 
   function brushed_context() {
     var s = d3.brushSelection(conBrush.node()) || context_xscale.range();
@@ -440,7 +441,7 @@ function labeller () {
 
   }
 
-  // d3.select('body').call(d3.keybinding()
+  // d3.select('body').call(keybinding()
   //     .on('←', transform_wrapper(-1,0))
   //     .on('→', transform_wrapper(1,0))
   //     .on('↑', transform_wrapper(0,-1))
@@ -456,9 +457,9 @@ function labeller () {
           console.log(brushSelector);
           if (brushSelector === 'Invert') {
             d.selected = d.selected ^ ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax));
-          } else if (brushSelector === 'Cooking') {
+          } else if (brushSelector === 'Label True') {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
-          } else if (brushSelector === 'Not Cooking') {
+          } else if (brushSelector === 'Label False') {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
           }
           

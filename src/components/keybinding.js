@@ -1,4 +1,4 @@
-d3.keybinding = function() {
+keybinding = function() {
     // via https://github.com/keithamus/jwerty/
     // and https://github.com/madrobby/keymaster
     var _keys = {
@@ -91,23 +91,23 @@ d3.keybinding = function() {
     // To minimise code bloat, add all of the letters of the alphabet in a loop
     i = 64;
     while(++i < 91) _keys.keys[String.fromCharCode(i).toLowerCase()] = i;
-
+ 
     var pairs = d3.entries(_keys.keys),
         event = d3.dispatch.apply(d3, d3.keys(_keys.keys));
-
+ 
     function keys(selection) {
         selection.on('keydown', function () {
             var tagName = d3.select(d3.event.target).node().tagName;
             if (tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA') {
                 return;
             }
-
+ 
             var modifiers = '';
             if (d3.event.shiftKey) modifiers += '⇧';
             if (d3.event.ctrlKey) modifiers += '⌃';
             if (d3.event.altKey) modifiers += '⌥';
             if (d3.event.metaKey) modifiers += '⌘';
-
+ 
             pairs.filter(function(d) {
                 return d.value === d3.event.keyCode;
             }).forEach(function(d) {
@@ -115,6 +115,6 @@ d3.keybinding = function() {
             });
         });
     }
-
+ 
     return d3.rebind(keys, event, 'on');
 };
