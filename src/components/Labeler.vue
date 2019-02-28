@@ -38,7 +38,7 @@ import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
 // import { keybinding } from '../assets/keybinding'
-// import { largestTriangleThreeBucket } from 'd3fc-sample';
+import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
 export default {
@@ -230,21 +230,15 @@ function labeller () {
   var mainBrush;
   var data;
   var quadtree;
-  var quadData;
+  var context_data;
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-  // var sampler = largestTriangleThreeBucket();
-  // // Configure the x / y value accessors
-  // sampler.x(function (d) { return d.x; })
-  //     .y(function (d) { return d.y; });
-
-  // // Configure the size of the buckets used to downsample the data.
-  // sampler.bucketSize(20);
-  // var sampledData;
-
+  
   function type(d) {
     d.time = parseDate(d.time);
     d.val = +d.val;
     d.selected = +d.selected;
+    d.x = +d.time;
+    d.y = d.val;
     return d;
   }
 
@@ -259,34 +253,29 @@ function labeller () {
   function init () {
     data = window.PLOTDATA;
     data = data.map(type);
-    //set scales based on loaded data
-    main_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
-    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
-
-    context_xscale.domain(main_xscale.domain());
-    context_yscale.domain(main_yscale.domain());
-
-    //generate quadmap to handle brushing of the main plot
-    quadData = data.map(function(d){d.x=main_xscale(d.time);
-     d.y=main_yscale(d.val);
-     return d});
-
-
+    
+    // Build quadtree for fast brushing
     quadtree=d3.quadtree()
-              .x(function(d) { return d.x; })
-              .y(function(d) { return d.y; })
-              .extent([[0,0], [width+1, main_height+1]])
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
               .addAll(data);
+    
+    // Downsample context data for big datasets
+    var sampler = largestTriangleThreeBucket();
+    
+    // Configure the x / y value accessors
+    sampler.x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
 
-    // svg.selectAll(".node")
-    //   .data(nodes(quadtree))
-    //   .enter().append("rect")
-    //     .attr("class", "node")
-    //     .attr("x", function(d) { return d.x0; })
-    //     .attr("y", function(d) { return d.y0; })
-    //     .attr("width", function(d) { return d.y1 - d.y0; })
-    //     .attr("height", function(d) { return d.x1 - d.x0; });
+    // Configure the size of the buckets used to downsample the data.
+    // Have at most 1000 context points
+    var bucket_size = Math.max(Math.round(data.length/1000),1);
+    sampler.bucketSize(bucket_size);
+    
+    context_data = sampler(data);
 
+
+    // Set default focus
     var start_date = data[0].time
     if(window.view_or_label=="label"){
       if (data.length > 10000) {
@@ -298,57 +287,70 @@ function labeller () {
 
     var defaultExtent = [start_date,end_date];
 
-    // // Run the sampler
-    // sampledData = sampler(data);
-
-    //make the plots
-    makeplot(data);
+    // set scales based on loaded data, default focus
+    main_xscale.domain(defaultExtent);
+    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
+    context_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    context_yscale.domain(pad_extent(main_yscale.domain()));
+    
+    // make the plots
+    makeplot(data, context_data);
     $('.loader').css('display', 'none');
 
     // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
-
-    // //run brushing functions to make sure everything highlighted right
-    // brushed_context();
-    // if(window.view_or_label=="label"){
-    //   update_selection();
-    // } else {
-    //   main.selectAll(".point").classed("training", function(d) { return d.training; });
-    //   context.selectAll(".point").classed("training", function(d) { return d.training; });
-
-    //   main.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-    //   context.selectAll(".point").classed("cooking", function(d) { return d.cooking; });
-    // }
-
-    // window.view_or_label = "label";
-
+    conBrush.call(context_brush.move, defaultExtent.map(context_xscale));
+    
+    // highlight selected points
+    update_selection();
+    
   }
 
   $(function () {
    init();
   });
 
-  //inital plotting function
-  function makeplot(data) {
-    //main plot
-    main.append("path")
-    .datum(data)
-    .attr("class", "line")
-    .attr("d", main_line);
+  function update_main(data){
     
-    mainBrush = main.append("g")
-    .attr("class", "main_brush")
-    .call(main_brush);
-    //.call(main_brush.event);
+    
+    // subset to only data in current domain
+    var x_domain = main_xscale.domain()
 
-    console.log(main.selectAll(".point"));
+    var  main_data = data.filter(function(d){
+      return x_domain[0] <= d.time & d.time<=x_domain[1]
+    })
+    
+    // redraw path
+    var path = main.selectAll("path");
+    path.remove();
+    
+    main.append("path")
+      .datum(main_data)
+      .attr("class","line")
+      .attr("d", main_line);   
+    
+    // redraw points
+    var point = main.selectAll("circle").data(main_data);
+    
+    point.attr("class", "update");
 
-    main.selectAll(".point")
-    .data(data)
+    point
     .enter().append("circle")
+    .attr("class", "enter")
+    .attr("cx", function(d) { return main_xscale(d.time); })
+    .attr("cy", function(d) { return main_yscale(d.val); })
+    .attr("r", 4)
+    .classed("selected", function(d) { return d.selected; })
+    .merge(point)
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 4);
+    .attr("r", 4)
+    .classed("selected", function(d) { return d.selected; });
+    
+    point
+    .exit().remove();
+    
+    
     main.selectAll(".point")
     .on("click", function(point){
           //allow clicking on single points
@@ -356,6 +358,17 @@ function labeller () {
           update_selection();
         });
 
+  }
+  
+  //initial plotting function
+  function makeplot(data, context_data) {
+    //main plot
+    
+    mainBrush = main.append("g")
+    .attr("class", "main_brush")
+    .call(main_brush);
+    //.call(main_brush.event);
+    
     main.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + main_height + ")")
@@ -365,14 +378,17 @@ function labeller () {
     .attr("class", "y axis")
     .call(yaxis);
 
+    update_main(data);
+    
     //context plot
     context.append("path")
-    .datum(data)
+    .datum(context_data)
     .attr("class", "line")
     .attr("d", context_line);
 
+
     context.selectAll(".point")
-    .data(data)
+    .data(context_data)
     .enter().append("circle")
     .attr("class", "point")
     .attr("cx", function(d) { return context_xscale(d.time); })
@@ -405,14 +421,11 @@ function labeller () {
     var s = d3.brushSelection(conBrush.node()) || context_xscale.range();
     main_xscale.domain(s.map(context_xscale.invert, context_xscale));
 
-    main.select(".line")
-    .attr("d", main_line);
 
-    main.selectAll(".point")
-    .attr("cx", function(d) { return main_xscale(d.time); });
-
+    update_main(data)    
     main.select(".x.axis").call(main_xaxis);
 
+    
     var limits=context_xscale.domain();
     if(context_brush.extent()[1]>=1*context_xscale.domain()[1]){
       console.log("far right");
@@ -474,35 +487,24 @@ function labeller () {
   //     .on('↓', transform_wrapper(0,1)));
 
   // Find the nodes within the specified rectangle.
-  function search(quadtree, x0, y0, x3, y3) {
-    quadtree.visit(function(node, x1, y1, x2, y2) {
+  function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+    
+    quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
         do {
+          
           var d = node.data;
-          d.selected = d.selected ^ ((d.x >= x1) && (d.x <= x2) && (d.y >= y1) && (d.y <= y2));
+          // invert selection for points in brush
+          d.selected = d.selected ^ ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax));
         } while (node = node.next);
       }
-      return x1 >= x3 || y1 >= y3 || x2 < x0 || y2 < y0;
+      
+      // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
+      return quad_xmin >= brush_xmax || quad_ymin >= brush_ymax || quad_xmax < brush_xmin || quad_ymax < brush_ymin;
     });
   }
 
-  // Find the nodes within the specified rectangle.
-  // function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
-  //   var brushed_points = [];
-  //   quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
-  //     console.log('visiting ' + node);
-  //     var p = node.point;
-  //     if (p){
-  //       //select based on xor (so brushing toggles all points under brush)
-  //       p.selected = p.selected ^ ((p.x >= brush_xmin) && (p.x <= brush_xmax) && (p.y >= brush_ymin) && (p.y <= brush_ymax));
-  //           brushed_points.push(p);
-  //       //post(p);
-  //     }
-  //     //true if brush and quadtree rectangle don't over lap -- we didn't brush anything in here.
-  //     //therefore, don't look at children of this node
-  //     return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
-  //   });
-  // }
+  
 
   function update_selection(){
     main.selectAll(".point").classed("selected", function(d) { return d.selected; });
@@ -514,13 +516,19 @@ function labeller () {
     if (extent === null) {
       return;
     }
-    //point.each(function(d) { d.selected = false; });
-    //convert based on context_xscale because this is what quadtree is defined on
-    // search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
-    search(quadtree, extent[0][0], extent[0][1], extent[1][0], extent[1][1]);
+    
+    // convert pixels defining brush into actual time, value scales
+    var xmin = main_xscale.invert(extent[0][0])
+    var xmax = main_xscale.invert(extent[1][0])
+    var ymax = main_yscale.invert(extent[0][1])
+    var ymin = main_yscale.invert(extent[1][1])
+    
+    
+    
+    search(quadtree, xmin, ymin, xmax, ymax);
 
     update_selection();
-    d3.selectAll(".main_brush").call(main_brush.move, null);
+    mainBrush.call(main_brush.move, null);
   }
 
   $('#clear').click(function() {
