@@ -8,6 +8,9 @@ import Labeler from './components/Labeler'
 
 require('expose-loader?$!expose-loader?jQuery!jquery')
 require('script-loader!jquery-csv')
+require('popper.js')
+require('bootstrap')
+require('bootstrap/dist/css/bootstrap.min.css')
 
 Vue.use(VueRouter)
 const routes = [

@@ -1,14 +1,24 @@
 <template>
   <div class="container-fluid" id="plotBox">
-    <nav class="navbar navbar-expand-lg fixed-top"> 
+    <nav class="navbar navbar-expand fixed-top"> 
       <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET</div></h1>
-      <div class="navbar-nav ml-auto">
+      <ul class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
-        <div class="nav-link" id="clear">Clear</div>
+        <li class="nav-item">
+          <div class="nav-link" id="clear">Clear</div>
+        </li>
+        <li class="nav-item dropdown">
+          <div class="nav-link dropdown-toggle" id="brush" data-toggle="dropdown">Brush</div>
+          <div class="dropdown-menu">
+            <div class="dropdown-item active">Invert</div>
+            <div class="dropdown-item">Cooking</div>
+            <div class="dropdown-item">Not Cooking</div>
+          </div>
+        </li>
         <div class="nav-link" id="export">Export</div>
-      </div>
+      </ul>
     </nav>
-    <div id="maindiv"></div>
+    <div id="maindiv" style="overflow:hidden;"></div>
     <div id="rangeContext"></div>
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
@@ -77,7 +87,8 @@ export default {
       window.view_or_label = "label";
       window.y_max = this.minMax[0];
       window.y_min = this.minMax[1];
-      $('#maindiv').append('<div class="loader"></div>');    
+      $('#maindiv').append('<div class="loader"></div>');
+      $('#maindiv').css("padding", "50px 150px");    
       labeller();
       // this.newlabeller();
 
@@ -97,7 +108,7 @@ function labeller () {
 
   //margins
   var main_margin = {top: 10, right: 10, bottom: 100, left: 40},
-  context_margin = {top: 430, right: 10, bottom: 20, left: 40},
+  context_margin = {top: 430, right: 40, bottom: 20, left: 40},
   maindiv_width = $('#maindiv').width(),
   width = maindiv_width - main_margin.left - main_margin.right,
   main_height = 500 - main_margin.top - main_margin.bottom,
@@ -122,6 +133,15 @@ function labeller () {
   .attr("height", main_height + main_margin.top + main_margin.bottom)
   .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
   .attr("perserveAspectRatio", "xMinYMid");
+
+  d3.select("#maindiv").insert("text", "#mainChart")
+        .attr("id", "chartTitle")
+        .attr("x", (width / 2))             
+        .attr("y", 0)
+        .attr("text-anchor", "middle")
+        .attr("padding-bottom", "-300px")  
+        .style("font-size", "25px")
+        .text(window.filename);
 
   //something about clipping, not sure what this is doing yet
   svg.append("defs").append("clipPath")
@@ -165,21 +185,16 @@ function labeller () {
   var mainBrush;
   var data;
   var quadtree;
-  var quadData;
-  var defaultExtent;
+  var context_data;
+  var brushSelector = 'Invert';
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
-  var sampler = largestTriangleThreeBucket();
-  // Configure the x / y value accessors
-  sampler.x(function (d) { return d.x; })
-      .y(function (d) { return d.y; });
-
-  // Configure the size of the buckets used to downsample the data.
-  sampler.bucketSize(3);
-
+  
   function type(d) {
     d.time = parseDate(d.time);
     d.val = +d.val;
     d.selected = +d.selected;
+    d.x = +d.time;
+    d.y = d.val;
     return d;
   }
 
@@ -194,49 +209,60 @@ function labeller () {
   function init () {
     data = window.PLOTDATA;
     data = data.map(type);
-    //set scales based on loaded data
-    main_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
-    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
-
-    context_xscale.domain(main_xscale.domain());
-    context_yscale.domain(main_yscale.domain());
-
-    //generate quadmap to handle brushing of the main plot
-    quadData = data.map(function(d){d.x=main_xscale(d.time);
-     d.y=main_yscale(d.val);
-     return d});
-
-
+    
+    // Build quadtree for fast brushing
     quadtree=d3.quadtree()
-              .x(function(d) { return d.x; })
-              .y(function(d) { return d.y; })
-              .extent([[-1,-1], [width+1, main_height+1]])
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
               .addAll(data);
+    
+    // Downsample context data for big datasets
+    var sampler = largestTriangleThreeBucket();
+    
+    // Configure the x / y value accessors
+    sampler.x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
 
+    // Configure the size of the buckets used to downsample the data.
+    // Have at most 1000 context points
+    var bucket_size = Math.max(Math.round(data.length/1000),1);
+    sampler.bucketSize(bucket_size);
+    
+    context_data = sampler(data);
+
+    // Set default focus
     var start_date = data[0].time
-    if (data.length > 10000) {
-      var end_date = data[1000].time;
-    } else {
-      var end_date = data[Math.round((data.length - 1) / 10)].time;
-    }
+    if(window.view_or_label=="label"){
+      if (data.length > 10000) {
+        var end_date = data[1000].time;
+      } else {
+        var end_date = data[Math.round((data.length - 1) / 10)].time;
+      }
+    } 
 
-    defaultExtent = [start_date,end_date].map(function(d) { return context_xscale(d); });
+    var defaultExtent = [start_date,end_date];
 
-    //make the plots
-    makeplot(data);
+    // set scales based on loaded data, default focus
+    main_xscale.domain(defaultExtent);
+    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
+    context_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    context_yscale.domain(pad_extent(main_yscale.domain()));
+    
+    // make the plots
+    makeplot(data, context_data);
     $('.loader').css('display', 'none');
-
     // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
-
-    // //run brushing functions to make sure everything highlighted right
-    // brushed_context();
-    // update_selection();
+    conBrush.call(context_brush.move, defaultExtent.map(context_xscale));
+    
+    // highlight selected points
+    update_selection();
 
   }
 
   $(function () {
    init();
   });
+
   function createInView(domain) {
     function inView(d) {
       var dom = domain.map(function(d) { return context_xscale(d); });
@@ -246,26 +272,46 @@ function labeller () {
   }
   
 
-  //inital plotting function
-  function makeplot(data) {
-    //main plot
-    main.append("path")
-    .datum(data)
-    .attr("class", "line")
-    .attr("d", main_line);
+  function update_main(data){
     
-    mainBrush = main.append("g")
-    .attr("class", "main_brush")
-    .call(main_brush);
-    //.call(main_brush.event);
+    
+    // subset to only data in current domain
+    var x_domain = main_xscale.domain()
 
-    main.selectAll(".point")
-    .data(data.filter(function(d) { return d.x >= defaultExtent[0] && d.x <= defaultExtent[1]; }))
-    .enter().append("circle")
+    var  main_data = data.filter(function(d){
+      return x_domain[0] <= d.time & d.time<=x_domain[1]
+    })
+    
+    // redraw path
+    var path = main.selectAll("path");
+    path.remove();
+    
+    main.append("path")
+      .datum(main_data)
+      .attr("class","line")
+      .attr("d", main_line);   
+    
+    // redraw points
+    var point = main.selectAll("circle").data(main_data);
+    
+    point.attr("class", "update");
+
+    point.enter().append("circle")
+    .attr("class", "enter")
+    .attr("cx", function(d) { return main_xscale(d.time); })
+    .attr("cy", function(d) { return main_yscale(d.val); })
+    .attr("r", 4)
+    .classed("selected", function(d) { return d.selected; })
+    .merge(point)
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 4);
+    .attr("r", 4)
+    .classed("selected", function(d) { return d.selected; });
+    
+    point.exit().remove();
+    
+    
     main.selectAll(".point")
     .on("click", function(point){
           //allow clicking on single points
@@ -273,6 +319,17 @@ function labeller () {
           update_selection();
         });
 
+  }
+  
+  //initial plotting function
+  function makeplot(data, context_data) {
+    //main plot
+    
+    mainBrush = main.append("g")
+    .attr("class", "main_brush")
+    .call(main_brush);
+    //.call(main_brush.event);
+    
     main.append("g")
     .attr("class", "x axis")
     .attr("transform", "translate(0," + main_height + ")")
@@ -282,14 +339,17 @@ function labeller () {
     .attr("class", "y axis")
     .call(yaxis);
 
+    update_main(data);
+    
     //context plot
     context.append("path")
-    .datum(data)
+    .datum(context_data)
     .attr("class", "line")
     .attr("d", context_line);
 
+
     context.selectAll(".point")
-    .data(data)
+    .data(context_data)
     .enter().append("circle")
     .attr("class", "point")
     .attr("cx", function(d) { return context_xscale(d.time); })
@@ -306,7 +366,7 @@ function labeller () {
     .attr("class", "context_brush")
     .call(context_brush);
 
-    d3.selectAll(".context_brush").call(context_brush.move, defaultExtent);
+
   }
 
   // function limit_context() {
@@ -319,39 +379,13 @@ function labeller () {
   // }
 
   function brushed_context() {
-    var s;
-    if (d3.event.selection === null) {
-      s = context_xscale.range();
-    } else {
-      s = d3.brushSelection(conBrush.node());
-    }
+    var s = d3.brushSelection(conBrush.node()) || context_xscale.range();
     main_xscale.domain(s.map(context_xscale.invert, context_xscale));
 
-    main.select(".line")
-    .attr("d", main_line);
-
-    main.selectAll(".point")
-    .attr("cx", function(d) { return main_xscale(d.time); });
-
-    var inView = createInView(main_xscale.domain());
-    var point = main.selectAll(".point").data(data.filter(inView));
-
-    point.enter().append("circle")
-      .attr("class", "point")
-      .attr("cx", function(d) { return main_xscale(d.time); })
-      .attr("cy", function(d) { return main_yscale(d.val); })
-      .attr("r", 4)
-      .merge(point);
-    point.attr("cx", function(d) { return main_xscale(d.time); })
-      .attr("class", "point")
-      .attr("cx", function(d) { return main_xscale(d.time); })
-      .attr("cy", function(d) { return main_yscale(d.val); })
-      .attr("r", 4)
-      .merge(point);
-    point.exit().remove();
-
+    update_main(data);
     main.select(".x.axis").call(main_xaxis);
 
+    
     var limits=context_xscale.domain();
     if(context_brush.extent()[1]>=1*context_xscale.domain()[1]){
       console.log("far right");
@@ -414,12 +448,25 @@ function labeller () {
 
   // Find the nodes within the specified rectangle.
   function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
-    quadtree.visit(function(node, rect_xmin, rect_ymin, rect_xmax, rect_ymax) {
-      var d = node.data;
-      if (d) {
-        d.selected = d.selected ^ ((d.x >= brush_xmin) && (d.x <= brush_xmax) && (d.y >= brush_ymin) && (d.y <= brush_ymax));
+    quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
+      if (!node.length) {
+        do {
+          var d = node.data;
+          // invert selection for points in brush
+          console.log(brushSelector);
+          if (brushSelector === 'Invert') {
+            d.selected = d.selected ^ ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax));
+          } else if (brushSelector === 'Cooking') {
+            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
+          } else if (brushSelector === 'Not Cooking') {
+            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
+          }
+          
+        } while (node = node.next);
       }
-      return rect_xmin > brush_xmax || rect_ymin > brush_ymax || rect_xmax < brush_xmin || rect_ymax < brush_ymin;
+      
+      // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
+      return quad_xmin >= brush_xmax || quad_ymin >= brush_ymax || quad_xmax < brush_xmin || quad_ymax < brush_ymin;
     });
   }
 
@@ -433,12 +480,18 @@ function labeller () {
     if (extent === null) {
       return;
     }
-    extent = extent.map(function(d) { return [main_xscale.invert(d[0]), main_yscale.invert(d[1])]; });
-
-    search(quadtree, context_xscale(extent[0][0]), main_yscale(extent[0][1]), context_xscale(extent[1][0]), main_yscale(extent[1][1]));
+    
+    // convert pixels defining brush into actual time, value scales
+    var xmin = main_xscale.invert(extent[0][0])
+    var xmax = main_xscale.invert(extent[1][0])
+    var ymax = main_yscale.invert(extent[0][1])
+    var ymin = main_yscale.invert(extent[1][1])
+    
+    
+    
+    search(quadtree, xmin, ymin, xmax, ymax);
     update_selection();
-
-    d3.selectAll(".main_brush").call(main_brush.move, null);
+    mainBrush.call(main_brush.move, null);
   }
 
   $('#clear').click(function() {
@@ -485,6 +538,12 @@ function labeller () {
     $('#exportComplete').show();
     $('.navbar').css("opacity", "0.5");
     $('#maindiv').css("opacity", "0.5");
+  });
+
+  $('.dropdown-item').click(function() {
+    $('.dropdown-item').not(this).removeClass('active');
+    $(this).toggleClass('active');
+    brushSelector = $('.dropdown-item.active').html();
   });
 
 }
@@ -566,6 +625,11 @@ svg {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+#chartTitle {
+  color: #7E4C64; 
+  font-weight: bold;
 }
 
 #error {
