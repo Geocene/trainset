@@ -14,7 +14,7 @@ require('bootstrap/dist/css/bootstrap.min.css')
 
 Vue.use(VueRouter)
 const routes = [
-	{ name: 'home', path: '/', component: Index },
+	{ name: 'home', path: '/', component: Index, props: true },
 	{ name: 'help', path: '/help', component: Help },
 	{ name: 'upload', path: '/upload', component: Upload, props: true },
 	{ name: 'labeler', path: '/labeler', component: Labeler, props: true }

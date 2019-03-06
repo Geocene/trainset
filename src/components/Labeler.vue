@@ -38,7 +38,7 @@
       <hr>
       <div class="failInfo" id="errorMsg">Upload new data set or continue labeling this one?</div>
       <button type="button" class="btn btn-light exportBtn" id="continue" @click="cancelUpload()">Continue</button>
-      <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="goHome()">Upload</button>
+      <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
   </div>
 </template>
@@ -47,7 +47,6 @@
 import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
-// import * as keybinding from './keybinding'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 
@@ -62,10 +61,13 @@ export default {
 	},
   methods: {
     goHome() {
-      this.$router.push({ name: 'home' });
+      this.$router.push({ name: 'home', params: {nextUp: false} });
+    },
+    newUpload() {
+      this.$router.push({ name: 'home', params: {nextUp: true} });
     },
     newHome() {
-      let routeData = this.$router.resolve({ name: 'home' });
+      let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
       window.open(routeData.href, '_blank');
     },
     cancel() {
@@ -441,12 +443,14 @@ function labeller () {
 
   }
 
-  // d3.select('body').call(keybinding()
-  //     .on('←', transform_wrapper(-1,0))
-  //     .on('→', transform_wrapper(1,0))
-  //     .on('↑', transform_wrapper(0,-1))
-  //     .on('↓', transform_wrapper(0,1)));
+  d3.select('body').call(keybinding()
+      .on('←', transform_wrapper(-1,0))
+      .on('→', transform_wrapper(1,0))
+      .on('↑', transform_wrapper(0,-1))
+      .on('↓', transform_wrapper(0,1)));
 
+
+  
   // Find the nodes within the specified rectangle.
   function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
     quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
@@ -554,10 +558,87 @@ function labeller () {
     brushSelector = $('.dropdown-item.active').html();
   });
 
+  function keybinding() {
+      var _keys = {
+          // MOD aka toggleable keys
+          mods: {
+              // Shift key, ⇧
+              '⇧': 16,
+              // CTRL key, on Mac: ⌃
+              '⌃': 17,
+              // ALT key, on Mac: ⌥ (Alt)
+              '⌥': 18,
+              // META, on Mac: ⌘ (CMD), on Windows (Win), on Linux (Super)
+              '⌘': 91
+          },
+          // Normal keys
+          keys: {
+              // Space key
+              space: 32,
+              // Left Arrow Key, or ←
+              '←': 37, left: 37, 'arrow-left': 37,
+              // Up Arrow Key, or ↑
+              '↑': 38, up: 38, 'arrow-up': 38,
+              // Right Arrow Key, or →
+              '→': 39, right: 39, 'arrow-right': 39,
+              // Up Arrow Key, or ↓
+              '↓': 40, down: 40, 'arrow-down': 40
+          }
+      };
+
+      var pairs = d3.entries(_keys.keys),
+          event = d3.dispatch.apply(d3, d3.keys(_keys.keys));
+
+      function keys(selection) {
+          selection.on('keydown', function () {
+              var tagName = d3.select(d3.event.target).node().tagName;
+              if (tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA') {
+                  return;
+              }
+
+              var modifiers = '';
+              if (d3.event.shiftKey) modifiers += '⇧';
+              if (d3.event.ctrlKey) modifiers += '⌃';
+              if (d3.event.altKey) modifiers += '⌥';
+              if (d3.event.metaKey) modifiers += '⌘';
+
+              pairs.filter(function(d) {
+                  return d.value === d3.event.keyCode;
+              }).forEach(function(d) {
+                  console.log(d);
+                  console.log(event);
+                  event[d.key](d3.event, modifiers);
+              });
+          });
+      }
+      return rebind(keys, event, 'on');
+  };
+
+  // Copies a variable number of methods from source to target.
+  function rebind(target, source) {
+    var i = 1, n = arguments.length, method;
+    while (++i < n) target[method = arguments[i]] = d3_rebind(target, source, source[method]);
+    return target;
+  };
+
+  // Method is assumed to be a standard D3 getter-setter:
+  // If passed with no arguments, gets the value.
+  // If passed with arguments, sets the value and returns the target.
+  function d3_rebind(target, source, method) {
+    return function() {
+      var value = method.apply(source, arguments);
+      return value === source ? target : value;
+    };
+  }
+
 }
 </script>
 
 <style>
+body {
+  overflow: hidden;
+}
+
 svg {
   font: 10px sans-serif;
   display: block;

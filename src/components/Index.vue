@@ -35,6 +35,9 @@ var strftime = require('strftime');
 
 export default {
   name: 'index',
+  props: {
+    nextUp: Boolean
+  },
   methods: {
     error() {
       this.$router.push({
@@ -47,6 +50,11 @@ export default {
           isValid: false
         }
       });
+    },
+    shouldUpload() {
+      if (this.nextUp === true) {
+        this.$nextTick(function() {this.upload()});
+      }
     },
     upload () {
       this.$refs.fileInput.click()
@@ -104,6 +112,9 @@ export default {
         });
       }
     }
+  },
+  created() {
+    this.shouldUpload()
   }
 };
 </script>
