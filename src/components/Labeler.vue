@@ -212,13 +212,19 @@ function labeller () {
   	}
   	var code = d3.event.keyCode;
   	if (code === 37) {
-  		transform_context(-2, 0);
+  		transform_context(-1, 0);
   	} else if (code === 39) {
-  		transform_context(2, 0);
+  		transform_context(1, 0);
   	} else if (code === 38) {
   		transform_context(0, -2);
   	} else if (code === 40) {
   		transform_context(0, 2);
+  	} else if (code === 32) {
+  		if (shiftKey) {
+  			transform_context(-9, 0);
+  		} else {
+  			transform_context(9, 0);
+  		}
   	}
   });
 
