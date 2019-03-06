@@ -284,7 +284,7 @@ function labeller () {
     var  main_data = data.filter(function(d){
       return x_domain[0] <= d.time & d.time<=x_domain[1]
     })
-    
+
     // redraw path
     var path = main.selectAll("path");
     path.remove();
@@ -292,7 +292,7 @@ function labeller () {
     main.append("path")
       .datum(main_data)
       .attr("class","line")
-      .attr("d", main_line);   
+      .attr("d", main_line);
     
     // redraw points
     var point = main.selectAll("circle").data(main_data);
@@ -303,17 +303,16 @@ function labeller () {
     .attr("class", "enter")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 4)
+    .attr("r", 5)
     .classed("selected", function(d) { return d.selected; })
     .merge(point)
     .attr("class", "point")
     .attr("cx", function(d) { return main_xscale(d.time); })
     .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 4)
+    .attr("r", 5)
     .classed("selected", function(d) { return d.selected; });
     
     point.exit().remove();
-    
     
     main.selectAll(".point")
     .on("click", function(point){
@@ -443,11 +442,20 @@ function labeller () {
 
   }
 
-  d3.select('body').call(keybinding()
-      .on('←', transform_wrapper(-1,0))
-      .on('→', transform_wrapper(1,0))
-      .on('↑', transform_wrapper(0,-1))
-      .on('↓', transform_wrapper(0,1)));
+  $('plotBox').keydown(function(event){
+    console.log(event); 
+  });
+
+  $('plotBox').keyup(function(event){
+    console.log(event);
+  });
+
+
+  // d3.select('body').call(keybinding()
+  //     .on('←', transform_wrapper(-1,0))
+  //     .on('→', transform_wrapper(1,0))
+  //     .on('↑', transform_wrapper(0,-1))
+  //     .on('↓', transform_wrapper(0,1)));
 
 
   
@@ -558,79 +566,6 @@ function labeller () {
     brushSelector = $('.dropdown-item.active').html();
   });
 
-  function keybinding() {
-      var _keys = {
-          // MOD aka toggleable keys
-          mods: {
-              // Shift key, ⇧
-              '⇧': 16,
-              // CTRL key, on Mac: ⌃
-              '⌃': 17,
-              // ALT key, on Mac: ⌥ (Alt)
-              '⌥': 18,
-              // META, on Mac: ⌘ (CMD), on Windows (Win), on Linux (Super)
-              '⌘': 91
-          },
-          // Normal keys
-          keys: {
-              // Space key
-              space: 32,
-              // Left Arrow Key, or ←
-              '←': 37, left: 37, 'arrow-left': 37,
-              // Up Arrow Key, or ↑
-              '↑': 38, up: 38, 'arrow-up': 38,
-              // Right Arrow Key, or →
-              '→': 39, right: 39, 'arrow-right': 39,
-              // Up Arrow Key, or ↓
-              '↓': 40, down: 40, 'arrow-down': 40
-          }
-      };
-
-      var pairs = d3.entries(_keys.keys),
-          event = d3.dispatch.apply(d3, d3.keys(_keys.keys));
-
-      function keys(selection) {
-          selection.on('keydown', function () {
-              var tagName = d3.select(d3.event.target).node().tagName;
-              if (tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA') {
-                  return;
-              }
-
-              var modifiers = '';
-              if (d3.event.shiftKey) modifiers += '⇧';
-              if (d3.event.ctrlKey) modifiers += '⌃';
-              if (d3.event.altKey) modifiers += '⌥';
-              if (d3.event.metaKey) modifiers += '⌘';
-
-              pairs.filter(function(d) {
-                  return d.value === d3.event.keyCode;
-              }).forEach(function(d) {
-                  console.log(d);
-                  console.log(event);
-                  event[d.key](d3.event, modifiers);
-              });
-          });
-      }
-      return rebind(keys, event, 'on');
-  };
-
-  // Copies a variable number of methods from source to target.
-  function rebind(target, source) {
-    var i = 1, n = arguments.length, method;
-    while (++i < n) target[method = arguments[i]] = d3_rebind(target, source, source[method]);
-    return target;
-  };
-
-  // Method is assumed to be a standard D3 getter-setter:
-  // If passed with no arguments, gets the value.
-  // If passed with arguments, sets the value and returns the target.
-  function d3_rebind(target, source, method) {
-    return function() {
-      var value = method.apply(source, arguments);
-      return value === source ? target : value;
-    };
-  }
-
 }
 </script>
 
@@ -655,6 +590,7 @@ svg {
   stroke: black;
   stroke-width: 1.5px;
   clip-path: url(#clip);
+  pointer-events: none;
 }
 
 .point {
@@ -667,20 +603,6 @@ svg {
   fill: red;
   fill-opacity: 1;
   stroke: red;
-  clip-path: url(#clip);
-}
-
-.point.training {
-  fill: blue;
-  fill-opacity: 1;
-  stroke: blue;
-  clip-path: url(#clip);
-}
-
-.point.cooking {
-  fill: #15d683;
-  fill-opacity: 1;
-  stroke: #15d683;
   clip-path: url(#clip);
 }
 
