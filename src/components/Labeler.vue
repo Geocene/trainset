@@ -7,14 +7,14 @@
         <li class="nav-item">
           <div class="nav-link" id="clear">Clear</div>
         </li>
-        <li class="nav-item dropdown">
+        <!-- <li class="nav-item dropdown">
           <div class="nav-link dropdown-toggle" id="brush" data-toggle="dropdown">Brush</div>
           <div class="dropdown-menu">
             <div class="dropdown-item active">Invert</div>
             <div class="dropdown-item">Label True</div>
             <div class="dropdown-item">Label False</div>
           </div>
-        </li>
+        </li> -->
         <div class="nav-link" id="export">Export</div>
       </ul>
     </nav>
@@ -173,6 +173,10 @@ function labeller () {
   .extent([[0,0], [width, main_height]])
   .on("end", brushed_main);
 
+  main_brush.on("start.nokey", function() {
+    d3.select(window).on("keydown.brush keyup.brush", null);
+  });
+
   var context_brush = d3.brushX()
   .extent([[0,0],[width, context_height]])
   .on("end", brushed_context)
@@ -190,6 +194,7 @@ function labeller () {
   .y(function(d) { return context_yscale(d.val); });
 
   //load data and adjust scales
+  var shiftKey = false;
   var conBrush;
   var mainBrush;
   var data;
@@ -197,6 +202,24 @@ function labeller () {
   var context_data;
   var brushSelector = 'Invert';
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
+
+  d3.select(window).on("keydown", function() {
+  	shiftKey = d3.event.shiftKey;
+  	if (shiftKey) {
+    	shiftKey = true;
+  	} else {
+    	shiftKey = false;
+  	}
+  });
+
+  d3.select(window).on("keyup", function() {
+  	shiftKey = d3.event.shiftKey;
+  	if (shiftKey) {
+    	shiftKey = true;
+  	} else {
+    	shiftKey = false;
+  	}
+  });
   
   function type(d) {
     d.time = parseDate(d.time);
@@ -451,15 +474,6 @@ function labeller () {
 
   }
 
-  $('plotBox').keydown(function(event){
-    console.log(event); 
-  });
-
-  $('plotBox').keyup(function(event){
-    console.log(event);
-  });
-
-
   // d3.select('body').call(keybinding()
   //     .on('←', transform_wrapper(-1,0))
   //     .on('→', transform_wrapper(1,0))
@@ -475,12 +489,9 @@ function labeller () {
         do {
           var d = node.data;
           // invert selection for points in brush
-          console.log(brushSelector);
-          if (brushSelector === 'Invert') {
-            d.selected = d.selected ^ ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax));
-          } else if (brushSelector === 'Label True') {
+          if (!shiftKey) {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
-          } else if (brushSelector === 'Label False') {
+          } else {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
           }
           
