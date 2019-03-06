@@ -145,6 +145,12 @@ function labeller () {
         .style("font-size", "25px")
         .text(window.filename);
 
+  d3.selection.prototype.moveToFront = function() {
+    return this.each(function(){
+      this.parentNode.appendChild(this);
+    });
+  };
+
   //something about clipping, not sure what this is doing yet
   svg.append("defs").append("clipPath")
   .attr("id", "clip")
@@ -293,6 +299,8 @@ function labeller () {
       .datum(main_data)
       .attr("class","line")
       .attr("d", main_line);
+
+
     
     // redraw points
     var point = main.selectAll("circle").data(main_data);
@@ -315,6 +323,7 @@ function labeller () {
     point.exit().remove();
     
     main.selectAll(".point")
+    .moveToFront()
     .on("click", function(point){
           //allow clicking on single points
           point.selected=1-point.selected;
