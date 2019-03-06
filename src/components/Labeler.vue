@@ -210,6 +210,16 @@ function labeller () {
   	} else {
     	shiftKey = false;
   	}
+  	var code = d3.event.keyCode;
+  	if (code === 37) {
+  		transform_context(-2, 0);
+  	} else if (code === 39) {
+  		transform_context(2, 0);
+  	} else if (code === 38) {
+  		transform_context(0, -2);
+  	} else if (code === 40) {
+  		transform_context(0, 2);
+  	}
   });
 
   d3.select(window).on("keyup", function() {
@@ -428,7 +438,11 @@ function labeller () {
 
   //keyboard functions to change the focus
   function transform_context(shift,scale) {
-    var currentExtent=context_brush.extent();
+    var currentExtent=d3.brushSelection(conBrush.node());
+    currentExtent = currentExtent.map(function(d) {
+    	return context_xscale.invert(d);
+    });
+
 
     var offset0=((1-Math.pow(1.1,scale))+0.1*shift)*(currentExtent[1]-currentExtent[0]);
     var offset1=((Math.pow(1.1,scale)-1)+0.1*shift)*(currentExtent[1]-currentExtent[0]);
@@ -461,26 +475,11 @@ function labeller () {
 
     //do shift and update brushing
     var newExtent=[(1*currentExtent[0])+offset0,(1*currentExtent[1])+offset1];
-    svg.select(".context_brush").call(context_brush.extent(newExtent));
+
+    conBrush.call(context_brush.move, newExtent.map(function(d) { return context_xscale(d); }));
 
     brushed_context();
   }
-
-  function transform_wrapper(shift,scale){
-     return function(event) {
-          event.preventDefault();
-          transform_context(shift,scale);
-      };
-
-  }
-
-  // d3.select('body').call(keybinding()
-  //     .on('←', transform_wrapper(-1,0))
-  //     .on('→', transform_wrapper(1,0))
-  //     .on('↑', transform_wrapper(0,-1))
-  //     .on('↓', transform_wrapper(0,1)));
-
-
   
   // Find the nodes within the specified rectangle.
   function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
