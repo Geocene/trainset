@@ -201,7 +201,7 @@ function labeller () {
   var quadtree;
   var context_data;
   var brushSelector = 'Invert';
-  var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S");
+  var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
 
   d3.select(window).on("keydown", function() {
   	shiftKey = d3.event.shiftKey;
@@ -556,11 +556,28 @@ function labeller () {
     update_selection();
   });
 
+  function toISOString(date) {
+      var tzo = -date.getTimezoneOffset(),
+          dif = tzo >= 0 ? '+' : '-',
+          pad = function(num) {
+              var norm = Math.floor(Math.abs(num));
+              return (norm < 10 ? '0' : '') + norm;
+          };
+      return date.getFullYear() +
+          '-' + pad(date.getMonth() + 1) +
+          '-' + pad(date.getDate()) +
+          'T' + pad(date.getHours()) +
+          ':' + pad(date.getMinutes()) +
+          ':' + pad(date.getSeconds()) +
+          dif + pad(tzo / 60) + pad(tzo % 60);
+  }
+
   $('#export').click(function() {
     var csvContent = window.headerStr + '\n';
+
     data.forEach(function(dataArray){
-      var date = new Date(dataArray.time).toISOString();
-      let row = window.filename + ',' + date.substring(0, date.length - 5) + date.charAt(date.length - 1) 
+      var date = toISOString(new Date(dataArray.time));
+      let row = window.filename + ',' + date
                 + ',' + dataArray.val + ',' + dataArray.selected;
       csvContent += row + '\n';
     });
