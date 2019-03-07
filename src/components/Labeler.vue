@@ -293,9 +293,10 @@ function labeller () {
     var defaultExtent = [start_date,end_date];
 
     // set scales based on loaded data, default focus
+    context_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    defaultExtent[0] = context_xscale.domain()[0];
     main_xscale.domain(defaultExtent);
     main_yscale.domain(pad_extent([window.y_min, window.y_max]));
-    context_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
     context_yscale.domain(pad_extent(main_yscale.domain()));
     
     // make the plots

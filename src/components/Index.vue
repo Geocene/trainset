@@ -98,6 +98,8 @@ export default {
           }
         }
         var minMax = [Math.max.apply(Math, values), Math.min.apply(Math, values)];
+        minMax[0] = minMax[0] + ((minMax[0] - minMax[1]) * 0.05);
+        minMax[1] = minMax[1] - ((minMax[0] - minMax[1]) * 0.05);
         var plotData = [timestamps, values, labels];
 
         this.$router.push({
