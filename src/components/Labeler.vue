@@ -18,7 +18,7 @@
         <div class="nav-link" id="export">Export</div>
       </ul>
     </nav>
-    <div id="maindiv" style="overflow:hidden;"></div>
+    <div id="maindiv"></div>
     <div id="rangeContext"></div>
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
@@ -130,18 +130,21 @@ function labeller () {
 
   //plotting areas
   var svg = d3.select("#maindiv").append("svg")
+  .classed("container-fluid", true)
+  .classed("mainChart", true)
   .attr("id", "mainChart")
   .attr("width", width + main_margin.left + main_margin.right)
   .attr("height", main_height + main_margin.top + main_margin.bottom)
   .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
-  .attr("perserveAspectRatio", "xMinYMid");
+  .attr("perserveAspectRatio", "xMinYMid meet");
 
   d3.select("#maindiv").insert("text", "#mainChart")
         .attr("id", "chartTitle")
         .attr("x", (width / 2))             
         .attr("y", 0)
         .attr("text-anchor", "middle")
-        .attr("padding-bottom", "-300px")  
+        .attr("padding-bottom", "-300px")
+        .attr("padding", "inherit 150px")  
         .style("font-size", "25px")
         .text(window.filename);
 
@@ -622,7 +625,14 @@ body {
 svg {
   font: 10px sans-serif;
   display: block;
+  position: absolute;
   margin: auto;
+  overflow: auto;
+}
+
+.mainChart {
+	display: block;
+	margin-left: -150px;
 }
 
 .area {
