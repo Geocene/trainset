@@ -90,7 +90,7 @@ export default {
       window.y_max = this.minMax[0];
       window.y_min = this.minMax[1];
       $('#maindiv').append('<div class="loader"></div>');
-      $('#maindiv').css("padding", "50px 150px");
+      $('#maindiv').css("padding", "50px 75px");
       labeller();
       // this.newlabeller();
 
@@ -349,6 +349,7 @@ function labeller () {
     main.append("path")
       .datum(main_data)
       .attr("class","line")
+      .attr("fill-opacity", "0.7")
       .attr("d", main_line);
 
 
@@ -375,6 +376,7 @@ function labeller () {
     
     main.selectAll(".point")
     .moveToFront()
+    .attr("fill-opacity", "0.7")
     .on("click", function(point){
           //allow clicking on single points
           point.selected=1-point.selected;
@@ -642,7 +644,7 @@ svg {
 
 .mainChart {
 	display: block;
-	margin-left: -150px;
+	margin-left: -75px;
 }
 
 .area {
@@ -704,7 +706,7 @@ svg {
 }
 
 #chartTitle {
-  color: #f4f4f4; 
+  color: #000000; 
   font-weight: bold;
 }
 
