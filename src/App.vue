@@ -17,7 +17,7 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 62px;
 }
 .navbar { background:#7E4C64; }
 .nav-link , .navbar-brand { color: #f4f4f4; cursor: pointer; }

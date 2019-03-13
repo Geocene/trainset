@@ -18,6 +18,7 @@
         <div class="nav-link" id="export">Export</div>
       </ul>
     </nav>
+    <div id="hoverbox" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
     <div id="maindiv"></div>
     <div id="rangeContext"></div>
     <div id="error" style="display: none;">
@@ -40,6 +41,7 @@
       <button type="button" class="btn btn-light exportBtn" id="continue" @click="cancelUpload()">Continue</button>
       <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
+    <button id="updateHover" style="display: none;" v-on:click="updateHoverbox"></button>
   </div>
 </template>
 
@@ -59,47 +61,58 @@ export default {
     headerStr: String,
 		isValid: Boolean
 	},
-  methods: {
-    goHome() {
-      this.$router.push({ name: 'home', params: {nextUp: false} });
+	data: function() {
+		return {
+			val: 0,
+			time: 0
+		};
+	},
+    methods: {
+	    goHome() {
+	      this.$router.push({ name: 'home', params: {nextUp: false} });
+	    },
+	    newUpload() {
+	      this.$router.push({ name: 'home', params: {nextUp: true} });
+	    },
+	    newHome() {
+	      let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
+	      window.open(routeData.href, '_blank');
+	    },
+	    updateHoverbox() {
+	      this.time = window.time;
+	      this.val = window.val;
+	    },
+	    cancel() {
+	      $('#clearOk').hide();
+	      $('.navbar').css("opacity", "1");
+	      $('#maindiv').css("opacity", "1");
+	    },
+	    cancelUpload() {
+	      $('#exportComplete').hide();
+	      $('.navbar').css("opacity", "1");
+	      $('#maindiv').css("opacity", "1");
+	    }
     },
-    newUpload() {
-      this.$router.push({ name: 'home', params: {nextUp: true} });
-    },
-    newHome() {
-      let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
-      window.open(routeData.href, '_blank');
-    },
-    cancel() {
-      $('#clearOk').hide();
-      $('.navbar').css("opacity", "1");
-      $('#maindiv').css("opacity", "1");
-    },
-    cancelUpload() {
-      $('#exportComplete').hide();
-      $('.navbar').css("opacity", "1");
-      $('#maindiv').css("opacity", "1");
-    }
-  },
 	mounted() {
-    if (this.isValid) {
-      window.headerStr = this.headerStr;
-      window.filename = this.filename;
-      window.PLOTDATA = this.csvData;
-      window.view_or_label = "label";
-      window.y_max = this.minMax[0];
-      window.y_min = this.minMax[1];
-      $('#maindiv').append('<div class="loader"></div>');
-      $('#maindiv').css("padding", "50px 75px");
-      labeller();
-      // this.newlabeller();
+	    if (this.isValid) {
+	      window.headerStr = this.headerStr;
+	      window.filename = this.filename;
+	      window.PLOTDATA = this.csvData;
+	      window.view_or_label = "label";
+	      window.y_max = this.minMax[0];
+	      window.y_min = this.minMax[1];
+	      $('#maindiv').append('<div class="loader"></div>');
+	      $('#maindiv').css("padding", "0px 75px");
+	      console.log(window.y_min, window.y_max);
+	      labeller();
+	      // this.newlabeller();
 
-    } else {
-      $('#clear').hide();
-      $('#export').hide();
-      $('.navbar').css("opacity", "0.5");
-      $('#error').show();
-    }
+	    } else {
+	      $('#clear').hide();
+	      $('#export').hide();
+	      $('.navbar').css("opacity", "0.5");
+	      $('#error').show();
+	    }
 	}
 }
 
@@ -381,8 +394,17 @@ function labeller () {
           //allow clicking on single points
           point.selected=1-point.selected;
           update_selection();
-        });
+        })
+    .on("mouseover", function(point) {
+    	  update_hoverbox(point.time, point.val);
+    	});
 
+  }
+
+  function update_hoverbox(time, val) {
+  	window.time = time.toString().split('GMT')[0];
+  	window.val = val.toFixed(2);
+  	$('#updateHover').click();
   }
   
   //initial plotting function
@@ -640,6 +662,15 @@ svg {
 
 #maindiv {
 	text-align: left;
+	margin-top: 90px;
+}
+
+#hoverbox {
+	float: right;
+	text-align: left;
+	padding: 10px;
+	padding-bottom: 0px;
+	margin-right: 75px;
 }
 
 .mainChart {
@@ -706,8 +737,7 @@ svg {
 }
 
 #chartTitle {
-  color: #000000; 
-  font-weight: bold;
+  color: #000000;
 }
 
 #error {
