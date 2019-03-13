@@ -286,7 +286,11 @@ function labeller () {
     // Set default focus
     var start_date = data[0].time
     if(window.view_or_label=="label"){
-      if (data.length > 10000) {
+      if (data.length < 100) {
+      	var end_date = data[data.length-1].time;
+      } else if (data.length < 1000) {
+      	var end_date = data[100].time;
+      } else if (data.length > 10000) {
         var end_date = data[1000].time;
       } else {
         var end_date = data[Math.round((data.length - 1) / 10)].time;
