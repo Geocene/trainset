@@ -81,7 +81,7 @@ export default {
             && fileText[i][1].match(/((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
             && fileText[i][2].match(/-?\d+(.\d+)?$/)
             && fileText[i][3].match(/1|0$/)
-            && fileText[i][0].match(filename)) {
+            && fileText[i][0].includes(filename)) {
             var date = strftime('%Y-%m-%d %H:%M:%S%z', new Date(fileText[i][1]));
             timestamps.push(date.toString());
             values.push(fileText[i][2]);
@@ -94,6 +94,17 @@ export default {
             });
             id++;
           } else {
+            if (!(fileText[i].length === 4)) {
+              console.log('line parse error');
+            } else if (!fileText[i][2].match(/-?\d+(.\d+)?$/)) {
+              console.log('val parse error');
+            } else if (!fileText[i][3].match(/1|0$/)) {
+              console.log('selected parse error');
+            } else if (!fileText[i][0].match(filename)) {
+              console.log('filename parse error');
+            } else {
+              console.log('date parse error');
+            }
             this.error();
             break;
           }
