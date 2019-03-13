@@ -75,8 +75,8 @@ export default {
 	},
 	data: function() {
 		return {
-			val: 0,
-			time: 0
+			val: '',
+			time: ''
 		};
 	},
     methods: {
@@ -97,6 +97,10 @@ export default {
 	    updateHoverbox() {
 	      this.time = window.time;
 	      this.val = window.val;
+	    },
+	    clearHoverbox() {
+	      this.time = '';
+	      this.val = '';
 	    },
 	    cancel() {
 	      $('#clearOk').hide();
@@ -119,7 +123,7 @@ export default {
 	      window.y_min = this.minMax[1];
 	      $('#maindiv').append('<div class="loader"></div>');
 	      $('#maindiv').css("padding", "0px 75px");
-	      console.log(window.y_min, window.y_max);
+	      $('#hoverbox').hide();
 	      labeller();
 	      // this.newlabeller();
 
@@ -402,6 +406,8 @@ function labeller () {
     .classed("selected", function(d) { return d.selected; });
     
     point.exit().remove();
+
+    var timer;
     
     main.selectAll(".point")
     .moveToFront()
@@ -412,15 +418,29 @@ function labeller () {
           update_selection();
         })
     .on("mouseover", function(point) {
-    	  update_hoverbox(point.time, point.val);
+    	  timer = setTimeout(function() {
+    	  	update_hoverbox(point.time, point.val);
+    	  }, 250);	
+    	})
+    .on("mouseout", function() {
+    	  clearTimeout(timer);
+    	  update_hoverbox('', '');
     	});
 
   }
 
   function update_hoverbox(time, val) {
-  	window.time = time.toString().split('GMT')[0];
-  	window.val = val.toFixed(2);
-  	$('#updateHover').click();
+  	if (time === '' && val === '') {
+  		$('#hoverbox').hide();
+  		window.time = '';
+  		window.val = '';
+  		$('#updateHover').click();
+  	} else {
+  		$('#hoverbox').show();
+  		window.time = time.toString().split('GMT')[0];
+  		window.val = val.toFixed(2);
+  		$('#updateHover').click();
+  	}
   }
   
   //initial plotting function
