@@ -138,15 +138,17 @@ function labeller () {
   .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
   .attr("perserveAspectRatio", "xMinYMid meet");
 
-  d3.select("#maindiv").insert("text", "#mainChart")
+  d3.select("#maindiv")
+  		.insert("text", "#mainChart")
         .attr("id", "chartTitle")
         .attr("x", (width / 2))             
         .attr("y", 0)
-        .attr("text-anchor", "middle")
         .attr("padding-bottom", "-300px")
         .attr("padding", "inherit 150px")  
         .style("font-size", "25px")
-        .text(window.filename);
+        .text(window.filename)
+        .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
+  		.attr("perserveAspectRatio", "xMinYMid meet");
 
   d3.selection.prototype.moveToFront = function() {
     return this.each(function(){
@@ -634,6 +636,10 @@ svg {
   overflow: auto;
 }
 
+#maindiv {
+	text-align: left;
+}
+
 .mainChart {
 	display: block;
 	margin-left: -150px;
@@ -698,7 +704,7 @@ svg {
 }
 
 #chartTitle {
-  color: #7E4C64; 
+  color: #f4f4f4; 
   font-weight: bold;
 }
 
