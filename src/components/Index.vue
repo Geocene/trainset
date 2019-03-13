@@ -65,7 +65,6 @@ export default {
       }
       var fileInput = document.getElementById("upload-file").files.item(0), fileText;
       var filename;
-      console.log(filename);
       var id = 0;
       var reader = new FileReader();
       var timestamps = [];

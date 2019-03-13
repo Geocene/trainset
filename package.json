@@ -10,7 +10,7 @@
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {
-    "bootstrap": "^4.2.1",
+    "bootstrap": "^4.3.1",
     "crossfilter": "^1.3.12",
     "d3": "^5.9.1",
     "d3-brush": "https://github.com/rushk014/d3-brush.git",
