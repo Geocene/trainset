@@ -64,7 +64,8 @@ export default {
         this.error();
       }
       var fileInput = document.getElementById("upload-file").files.item(0), fileText;
-      var filename = fileInput.name.split(".")[0];
+      var filename;
+      console.log(filename);
       var id = 0;
       var reader = new FileReader();
       var timestamps = [];
@@ -77,6 +78,9 @@ export default {
         fileText = $.csv.toArrays(reader.result);
         headerStr = fileText[0].toString();
         for (var i = 1; i < fileText.length ; i++) {
+          if (i === 1) {
+            filename = fileText[i][0];
+          }
           if (fileText[i].length === 4 
             && fileText[i][1].match(/((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
             && fileText[i][2].match(/-?\d+(.\d+)?$/)

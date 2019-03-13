@@ -3,7 +3,7 @@
     <nav class="navbar navbar-expand fixed-top"> 
       <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET</div></h1>
       <ul class="navbar-nav ml-auto">
-        <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
+        <div class="nav-link" @click="newHelp()">Help</div>
         <li class="nav-item">
           <div class="nav-link" id="clear">Clear</div>
         </li>
@@ -73,6 +73,10 @@ export default {
 	    },
 	    newUpload() {
 	      this.$router.push({ name: 'home', params: {nextUp: true} });
+	    },
+	    newHelp() {
+	      let routeData = this.$router.resolve({ name: 'help' });
+	      window.open(routeData.href, '_blank');
 	    },
 	    newHome() {
 	      let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
