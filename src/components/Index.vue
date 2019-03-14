@@ -14,18 +14,24 @@
     <br><br>
     <div id="info">
       <h5 class="subh">What is it?</h5>
-      TRAINSET is a graphical tool for labeling time series data. Labels can be used as-is or as a training set for machine
-learning algorithms. For example, TRAINSET can be used to build a training set for an algorithm to detect events in
-time series data. You get help learning to use TRAINSET here.<br><br>
+      TRAINSET is a graphical tool for labeling time series data. Labeling is typically used to record interesting points in time series data. For example, if you had temperature data from a sensor mounted to a stove, you could label points  that constitute cooking events. Labels could be used as-is or as a training set for machine learning algorithms. For example, TRAINSET could be used to build a training set for an algorithm that detects cooking events in temperature time series data.<br><br>
+      
       <h5 class="subh">Where did it come from?</h5>
-      TRAINSET evolved from a tool called SUMSarizer. SUMSarizer helps facilitate the application of ensemble machine
-learning tools to time series data. Most SUMSarizer users apply the tool to detect cooking events from temperature
-sensors called stove use monitoring systems (SUMS). SUMS are used to monitor cookstove adoption. Funding from
-____ has funded the development and maintenance of TRAINSET and SUMSarizer. SUMSarizer is an open-source R
-package available on CRAN and GitHub.<br><br>
+      TRAINSET evolved from a tool called <a href="https://github.com/geocene/sumsarizer" target="_blank">SUMSarizer</a>. SUMSarizer helps facilitate the application of ensemble machine learning tools to time series data. Most SUMSarizer users apply the tool to detect cooking events from temperature sensors called stove use monitoring systems (SUMS). SUMS are used to monitor cookstove adoption. Funding from __TODO__ has funded the development and maintenance of TRAINSET and SUMSarizer. SUMSarizer is an open-source R package available on <a href="https://github.com/geocene/sumsarizer" target="_blank">SUMSarizer's GitHub page</a>.<br><br>
+      
       <h5 class="subh">Who made it?</h5>
-      TRAINSET is maintained by Geocene Inc. with extensive contributions from Ajay Pillarisetti, Danny Wilson, Skot
-Croshere, Marc Paré, Jeremy Coyle, Hamza Benkhay, and Rush Kapoor.
+      TRAINSET is maintained by <a href="https://geocene.com" target="_blank">Geocene Inc.</a> with extensive contributions from Rush Kapoor, Ajay Pillarisetti, Jeremy Coyle, Skot Croshere, Marc Paré, Hamza Benkhay, and Danny Wilson.</br></br>
+
+      <h5 class="subh">MIT License</h5>
+
+      Copyright (c) 2019 Geocene Inc. </br></br>
+
+      Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</br></br>
+
+      The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. </br></br>
+
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
     </div>
   </div>
 </template>

@@ -42,6 +42,19 @@
       <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
     <button id="updateHover" style="display: none;" v-on:click="updateHoverbox"></button>
+    <div id="legend">
+      Legend</br>
+      Labeling</br>
+      CLICK: toggle label for a point</br>
+      CLICK & DRAG: apply TRUE label to selection</br>
+      +⇧: apply FALSE label</br>
+      Navigation</br>
+      → or ← : pan</br>
+      SHIFT + → or ← : fast pan</br>
+      ↑ or ↓: zoom</br>
+      CLICK bottom context bar: unfocus</br>
+      CLICK & DRAG bottom context bar: adjust focus region</br>
+    </div>
   </div>
 </template>
 
@@ -50,7 +63,6 @@ import * as d3 from 'd3'
 import * as dc from 'dc'
 import * as crossfilter from 'crossfilter'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
-
 
 export default {
 	name: 'labeler',
