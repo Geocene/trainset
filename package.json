@@ -6,8 +6,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_ENV=development webpack-dev-server --open --hot",
-    "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
+    "dev": "cross-env NODE_ENV=development webpack-dev-server --mode development --open --hot",
+    "build": "cross-env NODE_ENV=production webpack --progress --mode production --hide-modules"
   },
   "dependencies": {
     "bootstrap": "^4.3.1",
@@ -20,6 +20,7 @@
     "nprogress": "^0.2.0",
     "plotly.js": "^1.45.1",
     "popper.js": "^1.14.7",
+    "uglifyjs-webpack-plugin": "^2.1.2",
     "vue": "^2.5.11",
     "vue-keybindings": "^1.0.0",
     "vue-router": "^3.0.2"
@@ -44,9 +45,10 @@
     "sass-loader": "^6.0.6",
     "script-loader": "^0.7.2",
     "strftime": "^0.10.0",
-    "vue-loader": "^13.0.5",
+    "vue-loader": "^14.2.4",
     "vue-template-compiler": "^2.4.4",
-    "webpack": "^3.6.0",
-    "webpack-dev-server": "^2.9.1"
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3",
+    "webpack-dev-server": "^3.1.11"
   }
 }
