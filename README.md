@@ -5,15 +5,6 @@
 ## Build Setup
 
 ``` bash
-=======
-
-# TRAINSET
-
-> A very lightweight web application for labeling time series data. It's useful for building training sets.
-
-## Build Setup
-
->>>>>>> bc65d4470c501232447c39ebfea6837f67fe6e24
 # install dependencies
 npm install
 
@@ -23,7 +14,6 @@ npm run dev
 # build for production with minification
 npm run build
 
-<<<<<<< HEAD
 # testing script for serving prod build locally
 npm run start
 
