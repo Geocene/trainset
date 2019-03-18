@@ -132,6 +132,7 @@ export default {
         $('#export').hide();
         $('.navbar').css("opacity", "0.5");
         $('#error').show();
+        $('#hoverbox').hide();
       }
   }
 }
@@ -684,10 +685,6 @@ function labeller () {
 </script>
 
 <style>
-body {
-  overflow: hidden;
-}
-
 svg {
   font: 10px sans-serif;
   display: block;
@@ -822,7 +819,7 @@ svg {
 
 .exportBtn {
   margin: 8px 5px;
-  padding: 5px 5px;
+  padding: 5px 5px !important;
 }
 
 .clearbtn {
@@ -833,5 +830,11 @@ svg {
 hr {
   background: #f4f4f4;
   margin-top: 0px;
+}
+</style>
+
+<style scoped>
+body {
+  overflow: hidden;
 }
 </style>
