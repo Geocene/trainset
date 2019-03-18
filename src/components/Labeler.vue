@@ -65,75 +65,75 @@ import * as crossfilter from 'crossfilter'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 export default {
-	name: 'labeler',
-	props: {
-		csvData: Array,
+  name: 'labeler',
+  props: {
+    csvData: Array,
     minMax: Array,
-		filename: String,
+    filename: String,
     headerStr: String,
-		isValid: Boolean
-	},
-	data: function() {
-		return {
-			val: '',
-			time: ''
-		};
-	},
+    isValid: Boolean
+  },
+  data: function() {
+    return {
+      val: '',
+      time: ''
+    };
+  },
     methods: {
-	    goHome() {
-	      this.$router.push({ name: 'home', params: {nextUp: false} });
-	    },
-	    newUpload() {
-	      this.$router.push({ name: 'home', params: {nextUp: true} });
-	    },
-	    newHelp() {
-	      let routeData = this.$router.resolve({ name: 'help' });
-	      window.open(routeData.href, '_blank');
-	    },
-	    newHome() {
-	      let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
-	      window.open(routeData.href, '_blank');
-	    },
-	    updateHoverbox() {
-	      this.time = window.time;
-	      this.val = window.val;
-	    },
-	    clearHoverbox() {
-	      this.time = '';
-	      this.val = '';
-	    },
-	    cancel() {
-	      $('#clearOk').hide();
-	      $('.navbar').css("opacity", "1");
-	      $('#maindiv').css("opacity", "1");
-	    },
-	    cancelUpload() {
-	      $('#exportComplete').hide();
-	      $('.navbar').css("opacity", "1");
-	      $('#maindiv').css("opacity", "1");
-	    }
+      goHome() {
+        this.$router.push({ name: 'home', params: {nextUp: false} });
+      },
+      newUpload() {
+        this.$router.push({ name: 'home', params: {nextUp: true} });
+      },
+      newHelp() {
+        let routeData = this.$router.resolve({ name: 'help' });
+        window.open(routeData.href, '_blank');
+      },
+      newHome() {
+        let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
+        window.open(routeData.href, '_blank');
+      },
+      updateHoverbox() {
+        this.time = window.time;
+        this.val = window.val;
+      },
+      clearHoverbox() {
+        this.time = '';
+        this.val = '';
+      },
+      cancel() {
+        $('#clearOk').hide();
+        $('.navbar').css("opacity", "1");
+        $('#maindiv').css("opacity", "1");
+      },
+      cancelUpload() {
+        $('#exportComplete').hide();
+        $('.navbar').css("opacity", "1");
+        $('#maindiv').css("opacity", "1");
+      }
     },
-	mounted() {
-	    if (this.isValid) {
-	      window.headerStr = this.headerStr;
-	      window.filename = this.filename;
-	      window.PLOTDATA = this.csvData;
-	      window.view_or_label = "label";
-	      window.y_max = this.minMax[0];
-	      window.y_min = this.minMax[1];
-	      $('#maindiv').append('<div class="loader"></div>');
-	      $('#maindiv').css("padding", "0px 75px");
-	      $('#hoverbox').hide();
-	      labeller();
-	      // this.newlabeller();
+  mounted() {
+      if (this.isValid) {
+        window.headerStr = this.headerStr;
+        window.filename = this.filename;
+        window.PLOTDATA = this.csvData;
+        window.view_or_label = "label";
+        window.y_max = this.minMax[0];
+        window.y_min = this.minMax[1];
+        $('#maindiv').append('<div class="loader"></div>');
+        $('#maindiv').css("padding", "0px 75px");
+        $('#hoverbox').hide();
+        labeller();
+        // this.newlabeller();
 
-	    } else {
-	      $('#clear').hide();
-	      $('#export').hide();
-	      $('.navbar').css("opacity", "0.5");
-	      $('#error').show();
-	    }
-	}
+      } else {
+        $('#clear').hide();
+        $('#export').hide();
+        $('.navbar').css("opacity", "0.5");
+        $('#error').show();
+      }
+  }
 }
 
 function labeller () {
@@ -172,7 +172,7 @@ function labeller () {
   .attr("perserveAspectRatio", "xMinYMid meet");
 
   d3.select("#maindiv")
-  		.insert("text", "#mainChart")
+      .insert("text", "#mainChart")
         .attr("id", "chartTitle")
         .attr("x", (width / 2))             
         .attr("y", 0)
@@ -181,7 +181,7 @@ function labeller () {
         .style("font-size", "25px")
         .text(window.filename)
         .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
-  		.attr("perserveAspectRatio", "xMinYMid meet");
+      .attr("perserveAspectRatio", "xMinYMid meet");
 
   d3.selection.prototype.moveToFront = function() {
     return this.each(function(){
@@ -242,39 +242,39 @@ function labeller () {
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
 
   d3.select(window).on("keydown", function() {
-  	shiftKey = d3.event.shiftKey;
-  	if (shiftKey) {
-    	shiftKey = true;
-  	} else {
-    	shiftKey = false;
-  	}
-  	var code = d3.event.keyCode;
-  	if (code === 37) {
-  		if (shiftKey) {
-  			transform_context(-9, 0);
-  		} else {
-  			transform_context(-1, 0);
-  		}
-  	} else if (code === 39) {
-  		if (shiftKey) {
-  			transform_context(9, 0);
-  		} else {
-  			transform_context(1, 0);
-  		}
-  	} else if (code === 38) {
-  		transform_context(0, -2);
-  	} else if (code === 40) {
-  		transform_context(0, 2);
-  	}
+    shiftKey = d3.event.shiftKey;
+    if (shiftKey) {
+      shiftKey = true;
+    } else {
+      shiftKey = false;
+    }
+    var code = d3.event.keyCode;
+    if (code === 37) {
+      if (shiftKey) {
+        transform_context(-9, 0);
+      } else {
+        transform_context(-1, 0);
+      }
+    } else if (code === 39) {
+      if (shiftKey) {
+        transform_context(9, 0);
+      } else {
+        transform_context(1, 0);
+      }
+    } else if (code === 38) {
+      transform_context(0, -2);
+    } else if (code === 40) {
+      transform_context(0, 2);
+    }
   });
 
   d3.select(window).on("keyup", function() {
-  	shiftKey = d3.event.shiftKey;
-  	if (shiftKey) {
-    	shiftKey = true;
-  	} else {
-    	shiftKey = false;
-  	}
+    shiftKey = d3.event.shiftKey;
+    if (shiftKey) {
+      shiftKey = true;
+    } else {
+      shiftKey = false;
+    }
   });
   
   function type(d) {
@@ -322,9 +322,9 @@ function labeller () {
     var start_date = data[0].time
     if(window.view_or_label=="label"){
       if (data.length < 100) {
-      	var end_date = data[data.length-1].time;
+        var end_date = data[data.length-1].time;
       } else if (data.length < 1000) {
-      	var end_date = data[100].time;
+        var end_date = data[100].time;
       } else if (data.length > 10000) {
         var end_date = data[1000].time;
       } else {
@@ -418,29 +418,29 @@ function labeller () {
           update_selection();
         })
     .on("mouseover", function(point) {
-    	  timer = setTimeout(function() {
-    	  	update_hoverbox(point.time, point.val);
-    	  }, 250);	
-    	})
+        timer = setTimeout(function() {
+          update_hoverbox(point.time, point.val);
+        }, 250);  
+      })
     .on("mouseout", function() {
-    	  clearTimeout(timer);
-    	  update_hoverbox('', '');
-    	});
+        clearTimeout(timer);
+        update_hoverbox('', '');
+      });
 
   }
 
   function update_hoverbox(time, val) {
-  	if (time === '' && val === '') {
-  		$('#hoverbox').hide();
-  		window.time = '';
-  		window.val = '';
-  		$('#updateHover').click();
-  	} else {
-  		$('#hoverbox').show();
-  		window.time = time.toString().split('GMT')[0];
-  		window.val = val.toFixed(2);
-  		$('#updateHover').click();
-  	}
+    if (time === '' && val === '') {
+      $('#hoverbox').hide();
+      window.time = '';
+      window.val = '';
+      $('#updateHover').click();
+    } else {
+      $('#hoverbox').show();
+      window.time = time.toString().split('GMT')[0];
+      window.val = val.toFixed(2);
+      $('#updateHover').click();
+    }
   }
   
   //initial plotting function
@@ -518,7 +518,7 @@ function labeller () {
   function transform_context(shift,scale) {
     var currentExtent=d3.brushSelection(conBrush.node());
     currentExtent = currentExtent.map(function(d) {
-    	return context_xscale.invert(d);
+      return context_xscale.invert(d);
     });
 
 
@@ -697,21 +697,21 @@ svg {
 }
 
 #maindiv {
-	text-align: left;
-	margin-top: 90px;
+  text-align: left;
+  margin-top: 90px;
 }
 
 #hoverbox {
-	float: right;
-	text-align: left;
-	padding: 10px;
-	padding-bottom: 0px;
-	margin-right: 75px;
+  float: right;
+  text-align: left;
+  padding: 10px;
+  padding-bottom: 0px;
+  margin-right: 75px;
 }
 
 .mainChart {
-	display: block;
-	margin-left: -75px !important;
+  display: block;
+  margin-left: -75px !important;
 }
 
 .area {

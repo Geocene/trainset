@@ -1,5 +1,5 @@
 {
-  "name": "trainset1",
+  "name": "trainset",
   "version": "1.0.0",
   "description": "TRAINSET is a graphical tool for labeling time series data",
   "author": "Rush Kapoor <rush.kapoor@berkeley.edu>",
