@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# trainset1
+# trainset
 
 > TRAINSET is a graphical tool for labeling time series data
 
@@ -33,6 +32,3 @@ npm run build --report
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
-=======
-For detailed explanation on how things work, consult the [docs for vue-loader](http://vuejs.github.io/vue-loader).
->>>>>>> bc65d4470c501232447c39ebfea6837f67fe6e24
