@@ -40,27 +40,6 @@
         </div>
       </div>
     </div>
-
-
-<!--     <div id="legend_left" class='text-left'>
-      <span class = "text-left"> How to Label Points</span></br>
-      <strong>Click</strong> a point to toggle it as labeled</br>
-      <strong>Click and Drag</strong> over a selection of points to label them</br>
-      <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
-    </div>
-    <div id="legend_right" class='text-left'>
-      <span class = "text-left"> How to Navigate the Graph</span></br>
-      <strong>Click</strong> a point to toggle it as labeled</br>
-      <strong>Click and Drag</strong> over a selection of points to label them</br>
-      <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
-      Navigation</br>
-      <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
-      <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
-      <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
-      CLICK bottom context bar: unfocus</br>
-      CLICK & DRAG bottom context bar: adjust focus region</br>
-    </div>
- -->
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
       <hr>
