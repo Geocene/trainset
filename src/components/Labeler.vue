@@ -21,6 +21,46 @@
     <div id="hoverbox" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
     <div id="maindiv"></div>
     <div id="rangeContext"></div>
+
+    <div id='legend' class='container'>
+      <div class='row'>
+        <div class="col">
+          <strong>How to Label Points</strong></br>
+          <strong>Click</strong> a point to toggle it as labeled</br>
+          <strong>Click and Drag</strong> over a selection of points to label them</br>
+          <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
+        </div>
+        <div class='col'>
+          <strong>How to Navigate the Graph</strong></br>
+          <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
+          <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
+          <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
+          <strong>Click</strong> on the bottom context bar to unfocus</br>
+          <strong>Click & drag</strong> the bottom context bar to adjust focus region</br>
+        </div>
+      </div>
+    </div>
+
+
+<!--     <div id="legend_left" class='text-left'>
+      <span class = "text-left"> How to Label Points</span></br>
+      <strong>Click</strong> a point to toggle it as labeled</br>
+      <strong>Click and Drag</strong> over a selection of points to label them</br>
+      <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
+    </div>
+    <div id="legend_right" class='text-left'>
+      <span class = "text-left"> How to Navigate the Graph</span></br>
+      <strong>Click</strong> a point to toggle it as labeled</br>
+      <strong>Click and Drag</strong> over a selection of points to label them</br>
+      <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
+      Navigation</br>
+      <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
+      <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
+      <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
+      CLICK bottom context bar: unfocus</br>
+      CLICK & DRAG bottom context bar: adjust focus region</br>
+    </div>
+ -->
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
       <hr>
@@ -42,19 +82,6 @@
       <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
     <button id="updateHover" style="display: none;" v-on:click="updateHoverbox"></button>
-    <div id="legend">
-      Legend</br>
-      Labeling</br>
-      CLICK: toggle label for a point</br>
-      CLICK & DRAG: apply TRUE label to selection</br>
-      +⇧: apply FALSE label</br>
-      Navigation</br>
-      → or ← : pan</br>
-      SHIFT + → or ← : fast pan</br>
-      ↑ or ↓: zoom</br>
-      CLICK bottom context bar: unfocus</br>
-      CLICK & DRAG bottom context bar: adjust focus region</br>
-    </div>
   </div>
 </template>
 
@@ -832,6 +859,21 @@ hr {
   margin-top: 0px;
 }
 
+kbd {
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.1em 0.5em;
+    margin: 0 0.2em;
+    box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff inset;
+    background-color: #f7f7f7;
+    font-size: 0.75em;
+    color:black;
+}
+
+#legend {
+  margin-top: 550px;
+}
 
 </style>
 
