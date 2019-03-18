@@ -186,7 +186,7 @@ function labeller () {
         .attr("padding-bottom", "-300px")
         .attr("padding", "inherit 150px")  
         .style("font-size", "25px")
-        .text(window.filename)
+        .text("Filename: " + window.filename)
         .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
       .attr("perserveAspectRatio", "xMinYMid meet");
 
