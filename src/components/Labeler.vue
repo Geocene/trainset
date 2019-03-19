@@ -27,8 +27,8 @@
         <div class="col">
           <strong>How to Label Points</strong></br>
           <strong>Click</strong> a point to toggle it as labeled</br>
-          <strong>Click and Drag</strong> over a selection of points to label them</br>
-          <strong>Click +<kbd>SHIFT</kbd></strong> over a selection of points to unlabel them</br>
+          <strong>Click & Drag</strong> over a selection of points to label them</br>
+          <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them</br>
         </div>
         <div class='col'>
           <strong>How to Navigate the Graph</strong></br>
@@ -36,7 +36,7 @@
           <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
           <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
           <strong>Click</strong> on the bottom context bar to unfocus</br>
-          <strong>Click & drag</strong> the bottom context bar to adjust focus region</br>
+          <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
         </div>
       </div>
     </div>
