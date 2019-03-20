@@ -33,5 +33,7 @@
   </div>
 </template>
 
-<script>
-</script>
+<style>
+#info { text-align: left; padding-left: 100px; }
+.subh { color: #7E4C64; font-weight: 900; }
+</style>

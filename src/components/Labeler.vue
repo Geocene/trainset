@@ -61,7 +61,6 @@
 <script>
 import * as d3 from 'd3'
 import * as dc from 'dc'
-import * as crossfilter from 'crossfilter'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 export default {
@@ -834,7 +833,9 @@ hr {
 </style>
 
 <style scoped>
-body {
-  overflow: hidden;
+html, body {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow: hidden !important;
 }
 </style>
