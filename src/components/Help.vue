@@ -10,13 +10,13 @@
 	    <h3 class="subh">Help with TRAINSET</h3>
 	    <h5 class="subh">Input data format</h5>
 	    
-	    TRAINSET only accepts specific file formats. This <a href="https://TODO" target="_blank">sample CSV</a> is formatted correctly. Files uploaded to TRAINSET must have four comma-delimited columms with the header: <code>filename, timestamp, value, label</code>; <code>null</code> data are not allowed.
+	    TRAINSET only accepts specific file formats. This <a href="/static/sample_trainset.csv" download>sample CSV</a> is formatted correctly. Files uploaded to TRAINSET must have four comma-delimited columms with the header: <code>filename, timestamp, value, label</code>; <code>null</code> data are not allowed.
 
 	    <ul style="list-style-type:square;">
 		<li><code>filename</code> is a unique name of the time series you are labeling. The contents of every row of <code>filename</code> must be identical.</li>
 		<li><code>timestamp</code> is a timestamp with time zone in <a href="https://en.wikipedia.org/wiki/ISO_8601" target="_blank">ISO8601 format</a>. For example <code>2019-03-13T21:11:29+00:00</code> or <code>2019-03-13T21:11:29Z</code>.</li>
 		<li><code>value</code> is a numeric scalar. Any real number is a valid for <code>value</code>.</li>
-		<li><code>label</code> is an integer representation of a boolean; <code>0==FALSE</code> and <code>1==TRUE</code>. It is possible to upload data to TRAINSET that is pre-labeled (i.e. the <code>label</code> column does not have to start with all zeros). See the <a href="https://TODO" target="_blank">sample CSV</a>.</li>
+		<li><code>label</code> is an integer representation of a boolean; <code>0==FALSE</code> and <code>1==TRUE</code>. It is possible to upload data to TRAINSET that is pre-labeled (i.e. the <code>label</code> column does not have to start with all zeros). See the <a href="/static/sample_trainset.csv" download>sample CSV</a>.</li>
 	    </ul>
 
 	    Failure to properly format your data will result in failed uploads.
@@ -32,3 +32,6 @@
     </div>
   </div>
 </template>
+
+<script>
+</script>

@@ -10,8 +10,9 @@
       <h3 id="welcome">Welcome to TRAINSET</h3>
       <button type="button" class="btn btn-lg btn-outline-danger upload" id="upload" @click="upload">Upload Data</button>
       <input type="file" id="upload-file" ref="fileInput" class="fileCheck" @change="fileCheck">
+      <a id="sampleCSV" href="/static/sample_trainset.csv" download>sample CSV</a>
     </div>
-    <br><br>
+    <br>
     <div id="info">
       <h5 class="subh">What is it?</h5>
       TRAINSET is a graphical tool for labeling time series data. Labeling is typically used to record interesting points in time series data. For example, if you had temperature data from a sensor mounted to a stove, you could label points  that constitute cooking events. Labels could be used as-is or as a training set for machine learning algorithms. For example, TRAINSET could be used to build a training set for an algorithm that detects cooking events in temperature time series data.<br><br>
@@ -149,4 +150,14 @@ export default {
 #upload-file { display: none; }
 #info { text-align: left; padding-left: 100px; }
 .subh { color: #7E4C64; font-weight: 900; }
+</style>
+
+<style scoped>
+#sampleCSV {
+  display: block;
+  padding-top: 10px;
+  padding-bottom: 5px;
+  margin-left: 500px;
+  margin-right: 500px;
+}
 </style>
