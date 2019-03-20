@@ -21,6 +21,25 @@
     <div id="hoverbox" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
     <div id="maindiv"></div>
     <div id="rangeContext"></div>
+
+    <div id='legend' class='container'>
+      <div class='row'>
+        <div class="col">
+          <strong>How to Label Points</strong></br>
+          <strong>Click</strong> a point to toggle it as labeled</br>
+          <strong>Click & Drag</strong> over a selection of points to label them</br>
+          <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them</br>
+        </div>
+        <div class='col'>
+          <strong>How to Navigate the Graph</strong></br>
+          <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
+          <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
+          <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
+          <strong>Click</strong> on the bottom context bar to unfocus</br>
+          <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
+        </div>
+      </div>
+    </div>
     <div id="error" style="display: none;">
       <h5 class="failInfo">Upload Failed</h5>
       <hr>
@@ -42,19 +61,6 @@
       <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
     <button id="updateHover" style="display: none;" v-on:click="updateHoverbox"></button>
-    <div id="legend">
-      Legend</br>
-      Labeling</br>
-      CLICK: toggle label for a point</br>
-      CLICK & DRAG: apply TRUE label to selection</br>
-      +⇧: apply FALSE label</br>
-      Navigation</br>
-      → or ← : pan</br>
-      SHIFT + → or ← : fast pan</br>
-      ↑ or ↓: zoom</br>
-      CLICK bottom context bar: unfocus</br>
-      CLICK & DRAG bottom context bar: adjust focus region</br>
-    </div>
   </div>
 </template>
 
@@ -179,7 +185,7 @@ function labeller () {
         .attr("padding-bottom", "-300px")
         .attr("padding", "inherit 150px")  
         .style("font-size", "25px")
-        .text(window.filename)
+        .text("Filename: " + window.filename)
         .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
       .attr("perserveAspectRatio", "xMinYMid meet");
 
@@ -241,7 +247,21 @@ function labeller () {
   var brushSelector = 'Invert';
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
 
-  d3.select(window).on("keydown", function() {
+  window.addEventListener("keydown", function(e) {
+      // space and arrow keys
+      if([40].indexOf(e.keyCode) > -1) {
+          transform_context(0, 2);
+          try  {
+            e.preventDefault();
+          } catch (e) {
+            // do nothing
+          }
+      } else if ([38].indexOf(e.keyCode) > -1) {
+          transform_context(0, -2);
+      }
+  }, false);
+
+  d3.select(window).on("keydown", function(e) {
     shiftKey = d3.event.shiftKey;
     if (shiftKey) {
       shiftKey = true;
@@ -261,10 +281,6 @@ function labeller () {
       } else {
         transform_context(1, 0);
       }
-    } else if (code === 38) {
-      transform_context(0, -2);
-    } else if (code === 40) {
-      transform_context(0, 2);
     }
   });
 
@@ -830,6 +846,23 @@ hr {
   background: #f4f4f4;
   margin-top: 0px;
 }
+
+kbd {
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.1em 0.5em;
+    margin: 0 0.2em;
+    box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff inset;
+    background-color: #f7f7f7;
+    font-size: 0.75em;
+    color:black;
+}
+
+#legend {
+  margin-top: 550px;
+}
+
 </style>
 
 <style scoped>
