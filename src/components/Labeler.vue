@@ -67,7 +67,6 @@
 <script>
 import * as d3 from 'd3'
 import * as dc from 'dc'
-import * as crossfilter from 'crossfilter'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 
 export default {
@@ -248,7 +247,21 @@ function labeller () {
   var brushSelector = 'Invert';
   var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
 
-  d3.select(window).on("keydown", function() {
+  window.addEventListener("keydown", function(e) {
+      // space and arrow keys
+      if([40].indexOf(e.keyCode) > -1) {
+          transform_context(0, 2);
+          try  {
+            e.preventDefault();
+          } catch (e) {
+            // do nothing
+          }
+      } else if ([38].indexOf(e.keyCode) > -1) {
+          transform_context(0, -2);
+      }
+  }, false);
+
+  d3.select(window).on("keydown", function(e) {
     shiftKey = d3.event.shiftKey;
     if (shiftKey) {
       shiftKey = true;
@@ -268,10 +281,6 @@ function labeller () {
       } else {
         transform_context(1, 0);
       }
-    } else if (code === 38) {
-      transform_context(0, -2);
-    } else if (code === 40) {
-      transform_context(0, 2);
     }
   });
 
@@ -857,7 +866,9 @@ kbd {
 </style>
 
 <style scoped>
-body {
-  overflow: hidden;
+html, body {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overflow: hidden !important;
 }
 </style>
