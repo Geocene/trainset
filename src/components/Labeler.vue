@@ -1,7 +1,7 @@
 <template>
   <div class="container-fluid" id="plotBox">
     <nav class="navbar navbar-expand fixed-top"> 
-      <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET</div></h1>
+      <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
       <ul class="navbar-nav ml-auto">
         <div class="nav-link" @click="newHelp()">Help</div>
         <li class="nav-item">
@@ -258,6 +258,11 @@ function labeller () {
           }
       } else if ([38].indexOf(e.keyCode) > -1) {
           transform_context(0, -2);
+          try  {
+            e.preventDefault();
+          } catch (e) {
+            // do nothing
+          }
       }
   }, false);
 
@@ -863,6 +868,9 @@ kbd {
   margin-top: 550px;
 }
 
+#logo {
+  max-height: 30px;
+}
 </style>
 
 <style scoped>

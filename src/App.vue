@@ -28,4 +28,5 @@ export default {
 .container { display: inline-block; padding-top: 75px !important; padding-right: 15px; padding-left: 15px; text-align: center; }
 .homeLink { text-decoration: none; color: inherit; }
 .homeLink:hover { text-decoration: none; color: inherit; }
+#logo { max-height: 30px !important; }
 </style>
