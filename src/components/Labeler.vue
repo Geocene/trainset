@@ -719,11 +719,16 @@ svg {
 }
 
 #hoverbox {
+  position: absolute;
   float: right;
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
-  margin-right: 75px;
+  margin-left: 76%;
+}
+
+#plotbox {
+  position: relative;
 }
 
 .mainChart {
