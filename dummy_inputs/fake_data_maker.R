@@ -9,5 +9,5 @@ for (length in lengths) {
   value<-runif(length, -100, 1000)
   label<-rbinom(length, 1, 0.5)
   dt<-data.table(filename,timestamp,value,label)
-  write.csv(dt,file=paste('/Users/dlwilson/GitHub/Geocene/TRAINSET/dummy_inputs/',filename,sep=''),quote=FALSE,row.names=FALSE)
+  write.csv(dt,file=paste('~/TRAINSET/dummy_inputs/',filename,sep=''),quote=FALSE,row.names=FALSE)
 }
