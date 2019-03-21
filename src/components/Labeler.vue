@@ -878,14 +878,14 @@ hr {
 
 kbd {
     display: inline-block;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
     padding: 0.1em 0.5em;
     margin: 0 0.2em;
     box-shadow: 0 1px 0px rgba(0, 0, 0, 0.2), 0 0 0 2px #fff inset;
-    background-color: #f7f7f7;
-    font-size: 0.75em;
-    color:black;
+    background-color: #f7f7f7 !important;
+    font-size: 0.75em !important;
+    color:black !important;
 }
 
 #legend {
