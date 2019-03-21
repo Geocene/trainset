@@ -92,7 +92,14 @@ export default {
             && fileText[i][2].match(/-?\d+(.\d+)?$/)
             && fileText[i][3].match(/1|0$/)
             && fileText[i][0].includes(filename)) {
-            var date = strftime('%Y-%m-%d %H:%M:%S%z', new Date(fileText[i][1]));
+            var date;
+            var isMatch = /([+-](\d{2})\:?(\d{2}))$/.exec(fileText[i][1]);
+            if (isMatch != null && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+              var safariDate = fileText[i][1].replace(isMatch[0], "");
+              date = strftime('%Y-%m-%d %H:%M:%S', new Date(safariDate)) + isMatch[0];
+            } else {
+              date = strftime('%Y-%m-%d %H:%M:%S%z', new Date(fileText[i][1]));
+            }  
             timestamps.push(date.toString());
             values.push(fileText[i][2]);
             labels.push(Number(fileText[i][3]));
