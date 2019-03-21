@@ -870,7 +870,8 @@ kbd {
 }
 
 #legend {
-  margin-top: 550px;
+  margin-top: 520px;
+  margin-bottom: 30px;
 }
 
 #logo {

@@ -7,8 +7,8 @@
       </div>
     </nav>
     <div id="info">
-	    <h3 class="mb-5">Help with TRAINSET</h3>
-	    <h5 class="text-uppercase text-left">Input data format</h5>
+	    <h3 class="mb-5" id="title">Help with TRAINSET</h3>
+	    <h5 class="text-uppercase text-left subh">Input data format</h5>
 	    <p class='text-left'>TRAINSET only accepts specific file formats. This <a href="/static/sample_trainset.csv" download>sample CSV</a> is formatted correctly. Files uploaded to TRAINSET must have four comma-delimited columms with the header: <code>filename, timestamp, value, label</code>; <code>null</code> data are not allowed.</p>
 
 	    <div class='text-left'>
@@ -21,19 +21,20 @@
 		</div>
 	    <p class="mb-5"><strong>Failure to properly format your data will result in failed uploads.</strong></p>
 
-	    <h5 class="text-uppercase text-left">Labeling and Navigating</h5>
+	    <h5 class="text-uppercase text-left subh">Labeling and Navigating</h5>
 	    <p class='text-left mb-5'>Labeling is the act of applying labels, whether true or false, to your time series data. Labels can be toggled by clicking on points, or many labels can be applied at once by  "brushing" (clicking and dragging) over many points. Navigation of the time series is accomplished either with shortcut keys or by highlighting a "focus region" on the "context bar" underneath the plot. The focus region can be brushed onto the context bar, dragged, and resized with the mouse or with shortcut keys. A legend of available shortcut keys is shown below the plot to help you navigate the time series and apply labels.</p>
 
-	    <h5 class="text-left text-uppercase">Exporting</h5>
+	    <h5 class="text-left text-uppercase subh">Exporting</h5>
 	    <p class='text-left mb-5'>After you finish labeling, you can export your data. An export will download a CSV to your default downloads folder. The name of this CSV will have the suffix <code>-labeled</code>. If the file you uploaded already had the suffix <code>-labeled</code>, no additional suffix will be added.</p>
 
-	    <h5 class="text-left text-uppercase">Privacy</h5>
+	    <h5 class="text-left text-uppercase subh">Privacy</h5>
 	    <p class='text-left mb-5'>TRAINSET is a client-side application. Although we use the word "upload" to describe importing data into TRAINSET, your time series data and labels are never transferred over the internet or visible to Geocene. Feel free to deploy TRAINSET locally using the instructions in the <a href="https://github.com/geocene/trainset" target="_blank">GitHub ReadMe</a>.</p>
     </div>
   </div>
 </template>
 
 <style>
+#title { color: #7E4C64; font-weight: bold; }
 #info { text-align: left; padding-left: 100px; }
-.subh { color: #7E4C64; font-weight: 900; }
+.subh { color: #7E4C64; font-weight: 500; }
 </style>
