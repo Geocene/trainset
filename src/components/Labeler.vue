@@ -509,7 +509,26 @@ function labeller () {
     .attr("class", "context_brush")
     .call(context_brush);
 
+    // store the reference to the original handler
+    var oldMousedown = conBrush.on('mousedown.brush');
 
+    // and replace it with our custom handler
+    conBrush.on('mousedown.brush', function () {
+        conBrush.on('mouseup.brush', function () {
+            clearHandlers();
+        });
+
+        conBrush.on('mousemove.brush', function () {
+            clearHandlers();
+            oldMousedown.call(this);
+            conBrush.on('mousemove.brush').call(this);
+        });
+
+        function clearHandlers() {
+            conBrush.on('mousemove.brush', null);
+            conBrush.on('mouseup.brush', null);
+        }
+    });
   }
 
   function limit_context() {
