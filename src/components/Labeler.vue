@@ -35,7 +35,6 @@
           <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
           <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
           <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
-          <strong>Click</strong> on the bottom context bar to unfocus</br>
           <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
         </div>
       </div>
