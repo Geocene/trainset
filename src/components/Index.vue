@@ -151,20 +151,20 @@ export default {
 </script>
 
 <style>
-#welcome { color: #7E4C64; font-weight: bold; }
 #upload { margin-top: 20px; border-width: 3px; border-color: #7E4C64; color: #7E4C64; padding: 15px 60px; }
 #upload:hover {  background: #7E4C64; color: #f4f4f4; }
 #upload-file { display: none; }
-#info { text-align: left; padding-left: 100px; }
-.subh { color: #7E4C64; font-weight: 900; }
 </style>
 
 <style scoped>
+#welcome { color: #7E4C64; font-weight: bold; }
+#info { text-align: left; padding-left: 100px; }
+.subh { color: #7E4C64; font-weight: 900 !important; }
 #sampleCSV {
   display: block;
   padding-top: 10px;
   padding-bottom: 5px;
-  margin-left: 500px;
-  margin-right: 500px;
+  margin-left: 40%;
+  margin-right: 40%;
 }
 </style>

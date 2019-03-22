@@ -25,7 +25,13 @@ export default {
 .nav-link:hover { background: #f4f4f4; color: #7E4C64; }
 .navbar-toggler { background:#fff !important; }
 .navbar-nav { float: right; }
-.container { display: inline-block; padding-top: 75px !important; padding-right: 15px; padding-left: 15px; text-align: center; }
+.container { 
+  display: inline-block; 
+  padding-top: 75px !important; 
+  padding-right: 15px; 
+  padding-left: 15px; 
+  text-align: center;
+}
 .homeLink { text-decoration: none; color: inherit; }
 .homeLink:hover { text-decoration: none; color: inherit; }
 #logo { max-height: 30px !important; }
