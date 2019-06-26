@@ -4,6 +4,7 @@
       <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
       <ul class="navbar-nav ml-auto">
         <div class="nav-link" @click="newHelp()">Help</div>
+        <div class="nav-link" @click="newLicense()">License</div>
         <li class="nav-item">
           <div class="nav-link" id="clear">Clear</div>
         </li>
@@ -92,6 +93,10 @@ export default {
       },
       newHelp() {
         let routeData = this.$router.resolve({ name: 'help' });
+        window.open(routeData.href, '_blank');
+      },
+      newLicense() {
+        let routeData = this.$router.resolve({ name: 'license' });
         window.open(routeData.href, '_blank');
       },
       newHome() {
@@ -774,9 +779,9 @@ svg {
 }
 
 .point.selected {
-  fill: red;
-  fill-opacity: 1;
-  stroke: red;
+  fill: #FF5500;
+  fill-opacity: 0.75;
+  stroke: #FF5500;
   clip-path: url(#clip);
 }
 
