@@ -2,7 +2,7 @@
 
 > TRAINSET is a graphical tool for labeling time series data
 
-![TRAINSET screenshot for ReadMe](screenshot.png?raw=true "Title")
+![TRAINSET GIF](TRAINSET-GIF.gif?raw=true "Title")
 
 ## Build Setup
 
