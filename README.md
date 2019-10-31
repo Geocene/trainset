@@ -27,4 +27,4 @@ For a detailed explanation on how things work, check out the [guide](http://vuej
 
 ## Funding Support
 
-The latest development of TRAINSET was funded by the NIH Clean Cooking Implementation Science Network with funding from the NIH Common Fund for Global Health. The development team and cookstove community are grateful for this support.
+The development of TRAINSET was funded by the NIH Clean Cooking Implementation Science Network with funding from the NIH Common Fund for Global Health. The development team and cookstove community are grateful for this support.
