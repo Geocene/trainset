@@ -1,4 +1,4 @@
-# trainset
+# TRAINSET
 
 > TRAINSET is a graphical tool for labeling time series data
 
@@ -24,3 +24,7 @@ npm run build --report
 ```
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+
+## Funding Support
+
+The latest development of TRAINSET was funded by the NIH Clean Cooking Implementation Science Network with funding from the NIH Common Fund for Global Health. The development team and cookstove community are grateful for this support.
