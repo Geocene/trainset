@@ -25,6 +25,32 @@ npm run build --report
 
 For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
 
+## Docker
+
+Build
+```
+docker build . TRAINSET:1.0.0
+```
+
+Run
+```
+docker run -d -p 5000:5000 --name TRAINSET TRAINSET:1.0.0
+```
+
+## Configure Labels
+
+Define your labels in a JSON file and mount it to the docker container as `/app/static/labels.json`.
+
+/home/me/my_labels.json
+```
+{
+  "1": "Label 1",
+  "2": "Label 2"
+}
+```
+
+`docker run -v /home/me/my_labels.json:/app/static/labels.json -d -p 5000:5000 --name TRAINSET TRAINSET:1.0.0`
+
 ## Funding Support
 
 The development of TRAINSET was funded by the NIH Clean Cooking Implementation Science Network with funding from the NIH Common Fund for Global Health. The development team and cookstove community are grateful for this support.

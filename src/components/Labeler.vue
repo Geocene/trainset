@@ -147,6 +147,7 @@ export default {
 }
 
 function labeller () {
+  fetch('/static/labels.json').then(response => response.json()).then(labels => window.available_labels = Object.entries(labels));
 
   // main -- main plot
   // context -- smaller context plot for zooming, scrolling
@@ -439,7 +440,12 @@ function labeller () {
     .attr("fill-opacity", "0.7")
     .on("click", function(point){
           //allow clicking on single points
-          point.selected=1-point.selected;
+          if (available_labels.length > 1) {
+            point.selected = +prompt(available_labels.map(([label, name]) => `[${label}] ${name}`).join(', '), 0);
+          } else {
+            point.selected=1-point.selected;
+          }
+
           update_selection();
         })
     .on("mouseover", function(point) {
@@ -605,13 +611,21 @@ function labeller () {
   
   // Find the nodes within the specified rectangle.
   function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+    let label = 1;
+
+    // if file "static/labels.json" defines more than one label, let the user pick one
+    // after selecting points
+    if (available_labels.length > 1) {
+      label = +prompt(available_labels.map(([label, name]) => `[${label}] ${name}`).join(', '), 0);
+    }
+
     quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
         do {
           var d = node.data;
           // invert selection for points in brush
           if (!shiftKey) {
-            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
+            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? label : d.selected;
           } else {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
           }
