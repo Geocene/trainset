@@ -249,7 +249,7 @@ function labeller () {
   var quadtree;
   var context_data;
   var brushSelector = 'Invert';
-  var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
+  var parseDate = d3.timeParse("%Y-%m-%dT%H:%M:%S.%L%Z");
 
   window.addEventListener("keydown", function(e) {
       // space and arrow keys
@@ -675,13 +675,21 @@ function labeller () {
           pad = function(num) {
               var norm = Math.floor(Math.abs(num));
               return (norm < 10 ? '0' : '') + norm;
-          };
+          },
+	  padms = function(ms) {
+	    ms = ms.toString()
+	    while (ms.length < 3) {
+	      ms = "0" + ms
+	    }
+	    return ms
+	  };
       return date.getFullYear() +
           '-' + pad(date.getMonth() + 1) +
           '-' + pad(date.getDate()) +
           'T' + pad(date.getHours()) +
           ':' + pad(date.getMinutes()) +
           ':' + pad(date.getSeconds()) +
+	  '.' + padms(date.getMilliseconds()) +
           dif + pad(tzo / 60) + pad(tzo % 60);
   }
 
