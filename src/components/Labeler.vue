@@ -68,6 +68,7 @@
 import * as d3 from 'd3'
 import * as dc from 'dc'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
+const { DateTime } = require("luxon");
 
 export default {
   name: 'labeler',
@@ -302,7 +303,7 @@ function labeller () {
   });
   
   function type(d) {
-    d.time = new Date(d.time);
+    d.time = DateTime.fromISO(d.time, {setZone: true});
     d.val = +d.val;
     d.selected = +d.selected;
     d.x = +d.time;
@@ -688,7 +689,7 @@ function labeller () {
     var csvContent = window.headerStr + '\n';
 
     data.forEach(function(dataArray){
-      var date = dataArray.time.toISOString(); // add support for existing timezone offsets (ie. don't flatten to UTC?)
+      var date = dataArray.time.toISO();
       let row = window.filename + ',' + date
                 + ',' + dataArray.val + ',' + dataArray.selected;
       csvContent += row + '\n';

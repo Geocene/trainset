@@ -28,6 +28,7 @@
 </template>
 
 <script>
+const { DateTime } = require("luxon");
 var strftime = require('strftime');
 
 export default {
@@ -56,6 +57,35 @@ export default {
     upload () {
       this.$refs.fileInput.click()
     },
+    parseDate (date) {
+      var parts = date.split(/\D/);
+      alert(date);
+      alert(parts);
+      return new Date()
+    },
+    toISOString (date) {
+      var tzo = -date.getTimezoneOffset(),
+          dif = tzo >= 0 ? '+' : '-',
+          pad = function(num) {
+              var norm = Math.floor(Math.abs(num));
+              return (norm < 10 ? '0' : '') + norm;
+          },
+          padms = function(ms) {
+            ms = ms.toString()
+            while (ms.length < 3) {
+              ms = "0" + ms
+            }
+            return ms
+          };
+      return date.getFullYear() +
+          '-' + pad(date.getMonth() + 1) +
+          '-' + pad(date.getDate()) +
+          'T' + pad(date.getHours()) +
+          ':' + pad(date.getMinutes()) +
+          ':' + pad(date.getSeconds()) +
+          '.' + padms(date.getMilliseconds()) +
+          dif + pad(tzo / 60) + pad(tzo % 60);
+    },
     fileCheck () {
       window.onerror = (errorMsg, url, lineNumber) => {
         this.error();
@@ -82,14 +112,14 @@ export default {
             && fileText[i][2].match(/-?\d+(.\d+)?$/)
             && fileText[i][3].match(/1|0$/)
             && fileText[i][0].includes(filename)) {
-            var date = new Date(fileText[i][1]);
-            timestamps.push(date.toISOString());
+            var date = DateTime.fromISO(fileText[i][1], {setZone: true});
+            timestamps.push(date);
             values.push(fileText[i][2]);
             labels.push(Number(fileText[i][3]));
             plotDict.push({
               'id': id.toString(),
               'val': Number(fileText[i][2]).toString(),
-              'time': date.toISOString(),
+              'time': date,
               'selected': Number(fileText[i][3]).toString()
             });
             id++;
