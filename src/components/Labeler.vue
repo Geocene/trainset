@@ -249,7 +249,6 @@ function labeller () {
   var quadtree;
   var context_data;
   var brushSelector = 'Invert';
-  var parseDate = d3.timeParse("%Y-%m-%d %H:%M:%S%Z");
 
   window.addEventListener("keydown", function(e) {
       // space and arrow keys
@@ -303,7 +302,7 @@ function labeller () {
   });
   
   function type(d) {
-    d.time = parseDate(d.time);
+    d.time = new Date(d.time);
     d.val = +d.val;
     d.selected = +d.selected;
     d.x = +d.time;
@@ -689,7 +688,7 @@ function labeller () {
     var csvContent = window.headerStr + '\n';
 
     data.forEach(function(dataArray){
-      var date = toISOString(new Date(dataArray.time));
+      var date = dataArray.time.toISOString(); // add support for existing timezone offsets (ie. don't flatten to UTC?)
       let row = window.filename + ',' + date
                 + ',' + dataArray.val + ',' + dataArray.selected;
       csvContent += row + '\n';
