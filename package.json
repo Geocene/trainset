@@ -23,7 +23,6 @@
     "jquery-csv": "^0.8.12",
     "luxon": "^1.24.1",
     "popper.js": "^1.14.7",
-    "ssl-express-www": "^3.0.3",
     "strftime": "^0.10.0",
     "vue": "^2.5.2",
     "vue-router": "^3.0.1"
