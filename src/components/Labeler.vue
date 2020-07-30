@@ -303,7 +303,9 @@ function labeller () {
   });
   
   function type(d) {
-    d.time = DateTime.fromISO(d.time, {setZone: true});
+    d.actual_time = DateTime.fromISO(d.time, {setZone: true});
+    var d2 = d.time.toISO({ includeOffset: false });
+    d.time = DateTime.fromISO(d2);;
     d.val = +d.val;
     d.selected = +d.selected;
     d.x = +d.time;
@@ -444,7 +446,7 @@ function labeller () {
         })
     .on("mouseover", function(point) {
         timer = setTimeout(function() {
-          update_hoverbox(point.time, point.val);
+          update_hoverbox(point.actual_time, point.val);
         }, 250);  
       })
     .on("mouseout", function() {
@@ -669,27 +671,11 @@ function labeller () {
     update_selection();
   });
 
-  function toISOString(date) {
-      var tzo = -date.getTimezoneOffset(),
-          dif = tzo >= 0 ? '+' : '-',
-          pad = function(num) {
-              var norm = Math.floor(Math.abs(num));
-              return (norm < 10 ? '0' : '') + norm;
-          };
-      return date.getFullYear() +
-          '-' + pad(date.getMonth() + 1) +
-          '-' + pad(date.getDate()) +
-          'T' + pad(date.getHours()) +
-          ':' + pad(date.getMinutes()) +
-          ':' + pad(date.getSeconds()) +
-          dif + pad(tzo / 60) + pad(tzo % 60);
-  }
-
   $('#export').click(function() {
     var csvContent = window.headerStr + '\n';
 
     data.forEach(function(dataArray){
-      var date = dataArray.time.toISO();
+      var date = dataArray.actual_time.toISO();
       let row = window.filename + ',' + date
                 + ',' + dataArray.val + ',' + dataArray.selected;
       csvContent += row + '\n';
