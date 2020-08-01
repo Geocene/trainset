@@ -19,7 +19,10 @@
         <div class="nav-link" id="export">Export</div>
       </ul>
     </nav>
-    <div id="hoverbox" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
+    <div id="hoverbox">
+      <div id="selector" class="card"><div class="card-subtitle">Series Selector <select id="seriesSelect"></select></div></div>
+      <div id="hoverinfo" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
+    </div>
     <div id="maindiv"></div>
     <div id="rangeContext"></div>
 
@@ -60,7 +63,7 @@
       <button type="button" class="btn btn-light exportBtn" id="continue" @click="cancelUpload()">Continue</button>
       <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
     </div>
-    <button id="updateHover" style="display: none;" v-on:click="updateHoverbox"></button>
+    <button id="updateHover" style="display: none;" v-on:click="updateHoverinfo"></button>
   </div>
 </template>
 
@@ -77,6 +80,7 @@ export default {
     minMax: Array,
     filename: String,
     headerStr: String,
+    seriesList: Array,
     isValid: Boolean
   },
   data: function() {
@@ -104,11 +108,11 @@ export default {
         let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
         window.open(routeData.href, '_blank');
       },
-      updateHoverbox() {
+      updateHoverinfo() {
         this.time = window.time;
         this.val = window.val;
       },
-      clearHoverbox() {
+      clearHoverinfo() {
         this.time = '';
         this.val = '';
       },
@@ -121,6 +125,13 @@ export default {
         $('#exportComplete').hide();
         $('.navbar').css("opacity", "1");
         $('#maindiv').css("opacity", "1");
+      },
+      handleSelector() {
+        var select = document.getElementById("seriesSelect");
+        $.each(window.seriesList, function(i, p) {
+          $('#seriesSelect').append($('<option></option>').val(p).html(p));
+        });
+        window.selectorWidth = $('#selector').width();
       }
     },
   mounted() {
@@ -128,12 +139,17 @@ export default {
         window.headerStr = this.headerStr;
         window.filename = this.filename;
         window.PLOTDATA = this.csvData;
+        window.seriesList = this.seriesList;
         window.view_or_label = "label";
         window.y_max = this.minMax[0];
         window.y_min = this.minMax[1];
         $('#maindiv').append('<div class="loader"></div>');
         $('#maindiv').css("padding", "0px 75px");
-        $('#hoverbox').hide();
+
+        // populate selector & fix selector width
+        this.handleSelector();
+
+        $('#hoverinfo').hide();
         labeller();
         // this.newlabeller();
 
@@ -247,9 +263,11 @@ function labeller () {
   var conBrush;
   var mainBrush;
   var data;
+  var seriesData;
   var quadtree;
   var context_data;
   var brushSelector = 'Invert';
+  var selectedSeries = $('#seriesSelect option:selected').val();
 
   window.addEventListener("keydown", function(e) {
       // space and arrow keys
@@ -307,6 +325,7 @@ function labeller () {
     var d2 = d.time.toISO({ includeOffset: false });
     d.time = DateTime.fromISO(d2);;
     d.val = +d.val;
+    d.series = d.series;
     d.selected = +d.selected;
     d.x = +d.time;
     d.y = d.val;
@@ -446,27 +465,30 @@ function labeller () {
         })
     .on("mouseover", function(point) {
         timer = setTimeout(function() {
-          update_hoverbox(point.actual_time, point.val);
+          update_hoverinfo(point.actual_time, point.val);
         }, 250);  
       })
     .on("mouseout", function() {
         clearTimeout(timer);
-        update_hoverbox('', '');
+        update_hoverinfo('', '');
       });
 
   }
 
-  function update_hoverbox(time, val) {
+  function update_hoverinfo(time, val) {
     if (time === '' && val === '') {
-      $('#hoverbox').hide();
+      $('#hoverinfo').hide();
       window.time = '';
       window.val = '';
       $('#updateHover').click();
     } else {
-      $('#hoverbox').show();
+      $('#hoverinfo').show();
       window.time = time.toString().split('GMT')[0];
       window.val = val.toFixed(2);
       $('#updateHover').click();
+
+      // fix autosizing selector width
+      $('#selector').width(selectorWidth);
     }
   }
   
@@ -650,6 +672,10 @@ function labeller () {
     mainBrush.call(main_brush.move, null);
   }
 
+  $('#seriesSelect').change(function() {
+    selectedSeries = $('#seriesSelect option:selected').val();
+  });
+
   $('#clear').click(function() {
     $('#clearOk').show();
     $('.navbar').css("opacity", "0.5");
@@ -730,10 +756,20 @@ svg {
 #hoverbox {
   position: absolute;
   float: right;
+  margin-left: 76%;
+}
+
+#hoverinfo {
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
-  margin-left: 76%;
+}
+
+#selector {
+  position: relative;
+  margin-bottom: 10px;
+  text-align: left;
+  padding: 10px;
 }
 
 #plotbox {

@@ -59,8 +59,6 @@ export default {
     },
     parseDate (date) {
       var parts = date.split(/\D/);
-      alert(date);
-      alert(parts);
       return new Date()
     },
     toISOString (date) {
@@ -91,12 +89,11 @@ export default {
         this.error();
       }
       var fileInput = document.getElementById("upload-file").files.item(0), fileText;
-      var filename;
+      var filename = fileInput.name.split('.csv')[0];
       var id = 0;
       var reader = new FileReader();
-      var timestamps = [];
       var values = [];
-      var labels = [];
+      var seriesList = new Set();
       var plotDict = [];
       var headerStr;
       reader.readAsBinaryString(fileInput);
@@ -104,22 +101,20 @@ export default {
         fileText = $.csv.toArrays(reader.result);
         headerStr = fileText[0].toString();
         for (var i = 1; i < fileText.length ; i++) {
-          if (i === 1) {
-            filename = fileText[i][0];
-          }
           if (fileText[i].length === 4 
             && fileText[i][1].match(/((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
             && fileText[i][2].match(/-?\d+(.\d+)?$/)
             && fileText[i][3].match(/1|0$/)
-            && fileText[i][0].includes(filename)) {
+            /* && fileText[i][0].includes(filename) */) {
             var date = DateTime.fromISO(fileText[i][1], {setZone: true});
-            timestamps.push(date);
+            var series = fileText[i][0];
+            seriesList.add(series);
             values.push(fileText[i][2]);
-            labels.push(Number(fileText[i][3]));
             plotDict.push({
               'id': id.toString(),
               'val': Number(fileText[i][2]).toString(),
               'time': date,
+              'series': series,
               'selected': Number(fileText[i][3]).toString()
             });
             id++;
@@ -130,8 +125,6 @@ export default {
               console.log('val parse error');
             } else if (!fileText[i][3].match(/1|0$/)) {
               console.log('selected parse error');
-            } else if (!fileText[i][0].match(filename)) {
-              console.log('filename parse error');
             } else {
               console.log('date parse error');
             }
@@ -142,7 +135,8 @@ export default {
         var minMax = [Math.max.apply(Math, values), Math.min.apply(Math, values)];
         minMax[0] = minMax[0] + ((minMax[0] - minMax[1]) * 0.05);
         minMax[1] = minMax[1] - ((minMax[0] - minMax[1]) * 0.05);
-        var plotData = [timestamps, values, labels];
+
+        seriesList = Array.from(seriesList);
 
         this.$router.push({
           name: 'labeler',
@@ -151,6 +145,7 @@ export default {
             minMax: minMax,
             filename: filename,
             headerStr: headerStr,
+            seriesList: seriesList,
             isValid: true
           }
         });
