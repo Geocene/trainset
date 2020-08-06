@@ -92,7 +92,6 @@ export default {
       var filename = fileInput.name.split('.csv')[0];
       var id = 0;
       var reader = new FileReader();
-      var values = [];
       var seriesList = new Set();
       var plotDict = [];
       var headerStr;
@@ -109,7 +108,6 @@ export default {
             var date = DateTime.fromISO(fileText[i][1], {setZone: true});
             var series = fileText[i][0];
             seriesList.add(series);
-            values.push(fileText[i][2]);
             plotDict.push({
               'id': id.toString(),
               'val': Number(fileText[i][2]).toString(),
@@ -132,9 +130,6 @@ export default {
             break;
           }
         }
-        var minMax = [Math.max.apply(Math, values), Math.min.apply(Math, values)];
-        minMax[0] = minMax[0] + ((minMax[0] - minMax[1]) * 0.05);
-        minMax[1] = minMax[1] - ((minMax[0] - minMax[1]) * 0.05);
 
         seriesList = Array.from(seriesList);
 
@@ -142,7 +137,6 @@ export default {
           name: 'labeler',
           params: {
             csvData: plotDict,
-            minMax: minMax,
             filename: filename,
             headerStr: headerStr,
             seriesList: seriesList,

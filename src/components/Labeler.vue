@@ -21,7 +21,11 @@
     </nav>
     <div id="hoverbox">
       <div id="selector" class="card"><div class="card-subtitle">Series Selector <select id="seriesSelect"></select></div></div>
-      <div id="hoverinfo" class="card"><div class="card-subtitle">Time: {{ time }}</div><div class="card-subtitle">Value: {{ val }}</div></div>
+      <div id="hoverinfo" class="card">
+        <div class="card-subtitle">Time: {{ time }}</div>
+        <div class="card-subtitle">Value: {{ val }}</div>
+        <div class="card-subtitle">Series: {{ hoverseries }}</div>
+      </div>
     </div>
     <div id="maindiv"></div>
     <div id="rangeContext"></div>
@@ -77,7 +81,6 @@ export default {
   name: 'labeler',
   props: {
     csvData: Array,
-    minMax: Array,
     filename: String,
     headerStr: String,
     seriesList: Array,
@@ -86,7 +89,8 @@ export default {
   data: function() {
     return {
       val: '',
-      time: ''
+      time: '',
+      hoverseries: ''
     };
   },
     methods: {
@@ -111,10 +115,12 @@ export default {
       updateHoverinfo() {
         this.time = window.time;
         this.val = window.val;
+        this.hoverseries = window.hoverseries;
       },
       clearHoverinfo() {
         this.time = '';
         this.val = '';
+        this.hoverseries = '';
       },
       cancel() {
         $('#clearOk').hide();
@@ -141,8 +147,6 @@ export default {
         window.PLOTDATA = this.csvData;
         window.seriesList = this.seriesList;
         window.view_or_label = "label";
-        window.y_max = this.minMax[0];
-        window.y_min = this.minMax[1];
         $('#maindiv').append('<div class="loader"></div>');
         $('#maindiv').css("padding", "0px 75px");
 
@@ -188,6 +192,8 @@ function labeller () {
   context_xaxis = d3.axisBottom(context_xscale),
   yaxis = d3.axisLeft(main_yscale);
 
+  var y_axis;
+
   //plotting areas
   var svg = d3.select("#maindiv").append("svg")
   .classed("container-fluid", true)
@@ -215,6 +221,15 @@ function labeller () {
       this.parentNode.appendChild(this);
     });
   };
+
+  d3.selection.prototype.moveToBack = function() {  
+        return this.each(function() { 
+            var firstChild = this.parentNode.firstChild; 
+            if (firstChild) {
+                this.parentNode.insertBefore(this, firstChild); 
+            } 
+        });
+    };
 
   //something about clipping, not sure what this is doing yet
   svg.append("defs").append("clipPath")
@@ -258,12 +273,16 @@ function labeller () {
   .x(function(d) { return context_xscale(d.time); })
   .y(function(d) { return context_yscale(d.val); });
 
+  // vars for redrawing context
+  var context_plot;
+  var context_points;
+
   //load data and adjust scales
   var shiftKey = false;
   var conBrush;
   var mainBrush;
   var data;
-  var seriesData;
+  var allData;
   var quadtree;
   var context_data;
   var brushSelector = 'Invert';
@@ -340,9 +359,75 @@ function labeller () {
 
   }
 
+  function replot () {
+    // Build quadtree for fast brushing
+    quadtree=d3.quadtree()
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
+              .addAll(data);
+    
+    // Downsample context data for big datasets
+    var sampler = largestTriangleThreeBucket();
+    
+    // Configure the x / y value accessors
+    sampler.x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
+
+    // Configure the size of the buckets used to downsample the data.
+    // Have at most 1000 context points
+    var bucket_size = Math.max(Math.round(data.length/1000),1);
+    sampler.bucketSize(bucket_size);
+    
+    context_data = sampler(data);
+
+    // set y-axis based on selected series
+    var y_vals = data.map(d => d.val);
+    var minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
+    main_yscale.domain(pad_extent(minMax, 0.1));
+
+    context_yscale.domain(pad_extent(main_yscale.domain()));
+
+    // replot the plots
+    update_main(data);
+    main.select(".x.axis").call(main_xaxis);
+
+    context_plot.remove();
+    context_points.remove();
+
+    //context plot
+    context_plot = context.append("path")
+    .datum(context_data)
+    .attr("class", "line")
+    .attr("d", context_line);
+
+
+    context_points = context.selectAll(".point")
+    .data(context_data)
+    .enter().append("circle")
+    .attr("class", "point")
+    .attr("cx", function(d) { return context_xscale(d.time); })
+    .attr("cy", function(d) { return context_yscale(d.val); })
+    .attr("r", 2);
+
+    // redraw y axis
+    y_axis.remove();
+
+    y_axis = main.append("g")
+    .attr("class", "y axis")
+    .call(yaxis)
+    .call(g => g.select(".domain").remove());
+    
+
+    conBrush.moveToBack();
+
+    update_selection();
+  }
+
   function init () {
     data = window.PLOTDATA;
-    data = data.map(type);
+    allData = data.map(type);
+    data = allData.filter(d => d.series == selectedSeries);
+
     
     // Build quadtree for fast brushing
     quadtree=d3.quadtree()
@@ -367,11 +452,11 @@ function labeller () {
     // Set default focus
     var start_date = data[0].time
     if(window.view_or_label=="label"){
-      if (data.length < 100) {
+      if (data.length <= 100) {
         var end_date = data[data.length-1].time;
-      } else if (data.length < 1000) {
+      } else if (data.length <= 1000) {
         var end_date = data[100].time;
-      } else if (data.length > 10000) {
+      } else if (data.length >= 10000) {
         var end_date = data[1000].time;
       } else {
         var end_date = data[Math.round((data.length - 1) / 10)].time;
@@ -381,10 +466,15 @@ function labeller () {
     var defaultExtent = [start_date,end_date];
 
     // set scales based on loaded data, default focus
-    context_xscale.domain(pad_extent(d3.extent(data.map(function(d) { return d.time; }))));
+    context_xscale.domain(pad_extent(d3.extent(allData.map(function(d) { return d.time; })))); // xaxis set according to allData
     defaultExtent[0] = context_xscale.domain()[0];
     main_xscale.domain(defaultExtent);
-    main_yscale.domain(pad_extent([window.y_min, window.y_max]));
+
+    // set y-axis based on selected series
+    var y_vals = data.map(d => d.val);
+    var minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
+    main_yscale.domain(pad_extent(minMax, 0.1));
+
     context_yscale.domain(pad_extent(main_yscale.domain()));
     
     // make the plots
@@ -392,6 +482,7 @@ function labeller () {
     $('.loader').css('display', 'none');
     // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
     conBrush.call(context_brush.move, defaultExtent.map(context_xscale));
+    conBrush.moveToBack();
     
     // highlight selected points
     update_selection();
@@ -465,26 +556,27 @@ function labeller () {
         })
     .on("mouseover", function(point) {
         timer = setTimeout(function() {
-          update_hoverinfo(point.actual_time, point.val);
+          update_hoverinfo(point.actual_time, point.val, point.series);
         }, 250);  
       })
     .on("mouseout", function() {
         clearTimeout(timer);
-        update_hoverinfo('', '');
+        update_hoverinfo('', '', '');
       });
 
   }
 
-  function update_hoverinfo(time, val) {
-    if (time === '' && val === '') {
+  function update_hoverinfo(time, val, series) {
+    if (time === '' && val === '' && series == '') {
       $('#hoverinfo').hide();
       window.time = '';
       window.val = '';
       $('#updateHover').click();
     } else {
       $('#hoverinfo').show();
-      window.time = time.toString().split('GMT')[0];
+      window.time = time.toString();
       window.val = val.toFixed(2);
+      window.hoverseries = series.toString();
       $('#updateHover').click();
 
       // fix autosizing selector width
@@ -506,20 +598,20 @@ function labeller () {
     .attr("transform", "translate(0," + main_height + ")")
     .call(main_xaxis);
 
-    main.append("g")
+    y_axis = main.append("g")
     .attr("class", "y axis")
     .call(yaxis);
 
     update_main(data);
     
     //context plot
-    context.append("path")
+    context_plot = context.append("path")
     .datum(context_data)
     .attr("class", "line")
     .attr("d", context_line);
 
 
-    context.selectAll(".point")
+    context_points = context.selectAll(".point")
     .data(context_data)
     .enter().append("circle")
     .attr("class", "point")
@@ -674,6 +766,11 @@ function labeller () {
 
   $('#seriesSelect').change(function() {
     selectedSeries = $('#seriesSelect option:selected').val();
+    data = allData.filter(d => d.series == selectedSeries);
+
+    replot(data);
+
+
   });
 
   $('#clear').click(function() {
@@ -700,9 +797,9 @@ function labeller () {
   $('#export').click(function() {
     var csvContent = window.headerStr + '\n';
 
-    data.forEach(function(dataArray){
+    allData.forEach(function(dataArray){
       var date = dataArray.actual_time.toISO();
-      let row = window.filename + ',' + date
+      let row = dataArray.series + ',' + date
                 + ',' + dataArray.val + ',' + dataArray.selected;
       csvContent += row + '\n';
     });
