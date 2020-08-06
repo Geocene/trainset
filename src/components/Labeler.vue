@@ -153,6 +153,11 @@ export default {
         // populate selector & fix selector width
         this.handleSelector();
 
+        if (window.seriesList.length == 1) {
+          $('#selector').hide();
+          $('.ref_selector').hide();
+        }
+
         $('#hoverinfo').hide();
         labeller();
         // this.newlabeller();
@@ -184,15 +189,18 @@ function labeller () {
   var main_xscale = d3.scaleTime().range([0, width]),
   context_xscale = d3.scaleTime().range([0, width]),
   main_yscale = d3.scaleLinear().range([main_height, 0]),
+  secondary_yscale = d3.scaleLinear().range([main_height, 0]),
   context_yscale = d3.scaleLinear().range([context_height, 0]);
 
   //axes
   //can adjust multiscale time ticks: http://bl.ocks.org/mbostock/4149176
   var main_xaxis = d3.axisBottom(main_xscale),
   context_xaxis = d3.axisBottom(context_xscale),
-  yaxis = d3.axisLeft(main_yscale);
+  yaxis = d3.axisLeft(main_yscale),
+  refaxis = d3.axisRight(secondary_yscale);
 
   var y_axis;
+  var ref_axis;
 
   //plotting areas
   var svg = d3.select("#maindiv").append("svg")
@@ -243,6 +251,29 @@ function labeller () {
   .attr("class", "main")
   .attr("transform", "translate(" + main_margin.left + "," + main_margin.top + ")");
 
+
+  if (window.seriesList.length > 1) {
+    // add ref graph selector
+    svg.append("g")
+    .attr("class", "ref_selector")
+    .attr("transform", "translate(" + (context_margin.left - 55) + "," + (context_margin.top - 10) + ")")
+    .append("foreignObject")
+    .attr("width", 50)
+    .attr("height", 30)
+    .append("xhtml:body")
+    .html("<text id=ref_selector_text>Ref</text>  <input type=checkbox id=ref_selector />");
+
+    var ref_selector = d3.select("#ref_selector");
+
+    ref_selector.on("change", function() {
+      if (this.checked) {
+        setReference(1);
+      } else {
+        setReference(0);
+      }
+    });
+  }
+
   // smaller context window
   var context = svg.append("g")
   .attr("class", "context")
@@ -268,6 +299,11 @@ function labeller () {
   .x(function(d) { return main_xscale(d.time); })
   .y(function(d) { return main_yscale(d.val); });
 
+  var secondary_line = d3.line()
+  .curve(d3.curveLinear)
+  .x(function(d) { return main_xscale(d.time); })
+  .y(function(d) { return secondary_yscale(d.val); });
+
   var context_line = d3.line()
   .curve(d3.curveLinear)
   .x(function(d) { return context_xscale(d.time); })
@@ -287,6 +323,7 @@ function labeller () {
   var context_data;
   var brushSelector = 'Invert';
   var selectedSeries = $('#seriesSelect option:selected').val();
+  var refSeries = '';
 
   window.addEventListener("keydown", function(e) {
       // space and arrow keys
@@ -338,6 +375,16 @@ function labeller () {
       shiftKey = false;
     }
   });
+
+  function setReference(b) {
+    if (b == 1) {
+      refSeries = selectedSeries;
+    } else {
+      if (refSeries == selectedSeries) {
+        refSeries = '';
+      }
+    }
+  }
   
   function type(d) {
     d.actual_time = DateTime.fromISO(d.time, {setZone: true});
@@ -387,8 +434,6 @@ function labeller () {
 
     context_yscale.domain(pad_extent(main_yscale.domain()));
 
-    // replot the plots
-    update_main(data);
     main.select(".x.axis").call(main_xaxis);
 
     context_plot.remove();
@@ -416,6 +461,27 @@ function labeller () {
     .attr("class", "y axis")
     .call(yaxis)
     .call(g => g.select(".domain").remove());
+
+    if (ref_axis) {
+      ref_axis.remove();
+    }
+
+    // handle ref series
+    if (refSeries != '' && selectedSeries != refSeries) {
+
+      var ref_vals = allData.filter(d => d.series == refSeries).map(d => d.val);
+      minMax = [Math.min.apply(Math, ref_vals), Math.max.apply(Math, ref_vals)];
+      secondary_yscale.domain(pad_extent(minMax, 0.1));
+
+      ref_axis = main.append("g")
+      .attr("transform", "translate(" + width + ",0)")
+      .attr("class", "y axis")
+      .call(refaxis)
+      .call(g => g.select(".domain").remove());
+    }
+
+    // replot the plots
+    update_main(data);
     
 
     conBrush.moveToBack();
@@ -500,17 +566,23 @@ function labeller () {
     }
     return inView;
   }
-  
 
   function update_main(data){
-    
+
     
     // subset to only data in current domain
-    var x_domain = main_xscale.domain()
+    var x_domain = main_xscale.domain();
 
     var  main_data = data.filter(function(d){
       return x_domain[0] <= d.time & d.time<=x_domain[1]
-    })
+    });
+
+    // handles ref series
+    var secondary_data = refSeries == '' || refSeries == selectedSeries ? null : allData
+      .filter(d => d.series == refSeries)
+      .filter(function(d) {
+        return x_domain[0] <= d.time & d.time<=x_domain[1]
+      });
 
     // redraw path
     var path = main.selectAll("path");
@@ -521,6 +593,15 @@ function labeller () {
       .attr("class","line")
       .attr("fill-opacity", "0.7")
       .attr("d", main_line);
+
+    if (secondary_data) {
+      main.append("path")
+        .datum(secondary_data)
+        .attr("class","line")
+        .attr("id", "secondary_line")
+        .attr("fill-opacity", "0.4")
+        .attr("d", secondary_line);
+    }
 
 
     
@@ -768,6 +849,15 @@ function labeller () {
     selectedSeries = $('#seriesSelect option:selected').val();
     data = allData.filter(d => d.series == selectedSeries);
 
+    // only allow 1 reference series
+    if (refSeries != '') {
+      if (refSeries != selectedSeries) {
+        document.getElementById("ref_selector").disabled = true;
+      } else {
+        document.getElementById("ref_selector").disabled = false;
+      }
+    }
+
     replot(data);
 
 
@@ -867,6 +957,20 @@ svg {
   margin-bottom: 10px;
   text-align: left;
   padding: 10px;
+}
+
+#ref_selector {
+  width: 10px;
+  height: 10px;
+}
+
+#ref_selector_text {
+  font-size: 12px; 
+  font-style: sans-serif;
+}
+
+#secondary_line {
+  stroke: grey;
 }
 
 #plotbox {
