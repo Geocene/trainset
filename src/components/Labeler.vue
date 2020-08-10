@@ -8,14 +8,6 @@
         <li class="nav-item">
           <div class="nav-link" id="clear">Clear</div>
         </li>
-        <!-- <li class="nav-item dropdown">
-          <div class="nav-link dropdown-toggle" id="brush" data-toggle="dropdown">Brush</div>
-          <div class="dropdown-menu">
-            <div class="dropdown-item active">Invert</div>
-            <div class="dropdown-item">Label True</div>
-            <div class="dropdown-item">Label False</div>
-          </div>
-        </li> -->
         <div class="nav-link" id="export">Export</div>
       </ul>
     </nav>
@@ -77,6 +69,21 @@ import * as dc from 'dc'
 import { largestTriangleThreeBucket } from 'd3fc-sample';
 const { DateTime } = require("luxon");
 
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+
+d3.selection.prototype.moveToBack = function() {  
+  return this.each(function() { 
+      var firstChild = this.parentNode.firstChild; 
+      if (firstChild) {
+          this.parentNode.insertBefore(this, firstChild); 
+      } 
+  });
+};
+
 export default {
   name: 'labeler',
   props: {
@@ -94,44 +101,48 @@ export default {
     };
   },
     methods: {
+      // return to Index.vue
       goHome() {
         this.$router.push({ name: 'home', params: {nextUp: false} });
       },
+      // return to Index.vue and trigger file upload selection
       newUpload() {
         this.$router.push({ name: 'home', params: {nextUp: true} });
       },
+      // open Help.vue in new window
       newHelp() {
         let routeData = this.$router.resolve({ name: 'help' });
         window.open(routeData.href, '_blank');
       },
+      // open License.vue in new window
       newLicense() {
         let routeData = this.$router.resolve({ name: 'license' });
         window.open(routeData.href, '_blank');
       },
+      // open Index.vue in new window
       newHome() {
         let routeData = this.$router.resolve({ name: 'home', params: {nextUp: false} });
         window.open(routeData.href, '_blank');
       },
+      // update #hoverinfo data
       updateHoverinfo() {
         this.time = window.time;
         this.val = window.val;
         this.hoverseries = window.hoverseries;
       },
-      clearHoverinfo() {
-        this.time = '';
-        this.val = '';
-        this.hoverseries = '';
-      },
+      // cancel clear all series labels
       cancel() {
         $('#clearOk').hide();
         $('.navbar').css("opacity", "1");
         $('#maindiv').css("opacity", "1");
       },
+      // hide export modal and continue labeling
       cancelUpload() {
         $('#exportComplete').hide();
         $('.navbar').css("opacity", "1");
         $('#maindiv').css("opacity", "1");
       },
+      // build series selector using seriesList
       handleSelector() {
         var select = document.getElementById("seriesSelect");
         $.each(window.seriesList, function(i, p) {
@@ -223,21 +234,6 @@ function labeller () {
         .attr("viewBox", "0 0 " + (width + main_margin.left + main_margin.right) + " " + (main_height + main_margin.top + main_margin.bottom))
       .attr("perserveAspectRatio", "xMinYMid meet");
 
-  d3.selection.prototype.moveToFront = function() {
-    return this.each(function(){
-      this.parentNode.appendChild(this);
-    });
-  };
-
-  d3.selection.prototype.moveToBack = function() {  
-    return this.each(function() { 
-        var firstChild = this.parentNode.firstChild; 
-        if (firstChild) {
-            this.parentNode.insertBefore(this, firstChild); 
-        } 
-    });
-  };
-
   //something about clipping, not sure what this is doing yet
   // svg.append("defs").append("clipPath")
   // .attr("id", "clip")
@@ -311,7 +307,7 @@ function labeller () {
   var context_plot;
   var context_points;
 
-  //load data and adjust scales
+  // load data format and brushes
   var shiftKey = false;
   var conBrush;
   var mainBrush;
@@ -323,56 +319,58 @@ function labeller () {
   var selectedSeries = $('#seriesSelect option:selected').val();
   var refSeries = '';
 
-  window.addEventListener("keydown", function(e) {
-      // space and arrow keys
-      if([40].indexOf(e.keyCode) > -1) {
-          transform_context(0, 2);
-          try  {
-            e.preventDefault();
-          } catch (e) {
-            // do nothing
-          }
-      } else if ([38].indexOf(e.keyCode) > -1) {
-          transform_context(0, -2);
-          try  {
-            e.preventDefault();
-          } catch (e) {
-            // do nothing
-          }
-      }
-  }, false);
-
-  d3.select(window).on("keydown", function(e) {
-    shiftKey = d3.event.shiftKey;
-    if (shiftKey) {
-      shiftKey = true;
-    } else {
-      shiftKey = false;
-    }
-    var code = d3.event.keyCode;
-    if (code === 37) {
-      if (shiftKey) {
-        transform_context(-9, 0);
-      } else {
-        transform_context(-1, 0);
-      }
-    } else if (code === 39) {
-      if (shiftKey) {
-        transform_context(9, 0);
-      } else {
-        transform_context(1, 0);
-      }
-    }
+  $(function () {
+   init();
   });
 
-  d3.select(window).on("keyup", function() {
-    shiftKey = d3.event.shiftKey;
-    if (shiftKey) {
-      shiftKey = true;
-    } else {
-      shiftKey = false;
-    }
-  });
+  function init () {
+    data = window.PLOTDATA;
+    allData = data.map(type);
+    data = allData.filter(d => d.series == selectedSeries);
+
+    
+    // Build quadtree for fast brushing
+    quadtree=d3.quadtree()
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
+              .addAll(data);
+    
+    downsampleContext();
+
+    // Set default focus
+    var start_date = data[0].time
+    if (window.view_or_label=="label") {
+      if (data.length <= 100) {
+        var end_date = data[data.length-1].time;
+      } else if (data.length <= 1000) {
+        var end_date = data[100].time;
+      } else if (data.length >= 10000) {
+        var end_date = data[1000].time;
+      } else {
+        var end_date = data[Math.round((data.length - 1) / 10)].time;
+      }
+    } 
+
+    var defaultExtent = [start_date,end_date];
+
+    // set scales based on loaded data, default focus
+    context_xscale.domain(pad_extent(d3.extent(allData.map(function(d) { return d.time; })))); // xaxis set according to allData
+    defaultExtent[0] = context_xscale.domain()[0];
+    main_xscale.domain(defaultExtent);
+
+    updateYAxis();
+    
+    // make the plots
+    makeplot(data, context_data);
+    $('.loader').css('display', 'none');
+    // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
+    conBrush.call(context_brush.move, defaultExtent.map(context_xscale));
+    conBrush.moveToBack();
+    
+    // highlight selected points
+    update_selection();
+
+  }
 
   function setReference(b) {
     if (b == 1) {
@@ -383,7 +381,19 @@ function labeller () {
       }
     }
   }
+
+  /* return appropriate yscale applied to val of d 
+     based on whether primary or reference series */
+  function selectYScale(d) {
+    if (d.series == selectedSeries) {
+      return main_yscale(d.val);
+    }
+    if (d.series == refSeries) {
+      return secondary_yscale(d.val);
+    }
+  } 
   
+  /* format csv data with data structure */ 
   function type(d) {
     d.actual_time = DateTime.fromISO(d.time, {setZone: true});
     var d2 = d.time.toISO({ includeOffset: false });
@@ -466,7 +476,7 @@ function labeller () {
     if (refSeries != '' && selectedSeries != refSeries) {
 
       var ref_vals = allData.filter(d => d.series == refSeries).map(d => d.val);
-      minMax = [Math.min.apply(Math, ref_vals), Math.max.apply(Math, ref_vals)];
+      var minMax = [Math.min.apply(Math, ref_vals), Math.max.apply(Math, ref_vals)];
       secondary_yscale.domain(pad_extent(minMax, 0.1));
 
       ref_axis = main.append("g")
@@ -515,59 +525,6 @@ function labeller () {
     }
   }
 
-  function init () {
-    data = window.PLOTDATA;
-    allData = data.map(type);
-    data = allData.filter(d => d.series == selectedSeries);
-
-    
-    // Build quadtree for fast brushing
-    quadtree=d3.quadtree()
-              .x(function(d) { return d.time; })
-              .y(function(d) { return d.val; })
-              .addAll(data);
-    
-    downsampleContext();
-
-    // Set default focus
-    var start_date = data[0].time
-    if (window.view_or_label=="label") {
-      if (data.length <= 100) {
-        var end_date = data[data.length-1].time;
-      } else if (data.length <= 1000) {
-        var end_date = data[100].time;
-      } else if (data.length >= 10000) {
-        var end_date = data[1000].time;
-      } else {
-        var end_date = data[Math.round((data.length - 1) / 10)].time;
-      }
-    } 
-
-    var defaultExtent = [start_date,end_date];
-
-    // set scales based on loaded data, default focus
-    context_xscale.domain(pad_extent(d3.extent(allData.map(function(d) { return d.time; })))); // xaxis set according to allData
-    defaultExtent[0] = context_xscale.domain()[0];
-    main_xscale.domain(defaultExtent);
-
-    updateYAxis();
-    
-    // make the plots
-    makeplot(data, context_data);
-    $('.loader').css('display', 'none');
-    // svg.select(".context_brush").call(context_brush.extent(defaultExtent));
-    conBrush.call(context_brush.move, defaultExtent.map(context_xscale));
-    conBrush.moveToBack();
-    
-    // highlight selected points
-    update_selection();
-
-  }
-
-  $(function () {
-   init();
-  });
-
   function createInView(domain) {
     function inView(d) {
       var dom = domain.map(function(d) { return context_xscale(d); });
@@ -577,8 +534,6 @@ function labeller () {
   }
 
   function update_main(data) {
-
-    
     // subset to only data in current domain
     var x_domain = main_xscale.domain();
 
@@ -593,16 +548,40 @@ function labeller () {
         return x_domain[0] <= d.time & d.time<=x_domain[1]
       });
 
+    var total_data = secondary_data == null ? main_data : [...main_data, ...secondary_data.filter(d => d.selected != 0)];
+
     // redraw path
     var path = main.selectAll("path");
     path.remove();
-    
+
+    // add primary series data line
     main.append("path")
       .datum(main_data)
       .attr("class","line")
       .attr("fill-opacity", "0.7")
       .attr("d", main_line);
 
+    // redraw points
+    var point = main.selectAll("circle").data(total_data);
+    
+    point.attr("class", "update");
+
+    point.enter().append("circle")
+    .attr("class", "enter")
+    .attr("cx", function(d) { return main_xscale(d.time); })
+    .attr("cy", function(d) { return selectYScale(d); })
+    .attr("r", 5)
+    .classed("selected", function(d) { return d.selected; })
+    .merge(point)
+    .attr("class", "point")
+    .attr("cx", function(d) { return main_xscale(d.time); })
+    .attr("cy", function(d) { return selectYScale(d); })
+    .attr("r", 5)
+    .classed("selected", function(d) { return d.selected; });
+    
+    point.exit().remove();
+
+    // add secondary line and update secondary point styling if there is reference
     if (secondary_data) {
       main.append("path")
         .datum(secondary_data)
@@ -610,33 +589,18 @@ function labeller () {
         .attr("id", "secondary_line")
         .attr("fill-opacity", "0.4")
         .attr("d", secondary_line);
+
+      main.selectAll(".point")
+      .filter((d, i) => d.series == refSeries)
+      .attr("fill-opacity", "0.4")
+      .attr("r", 2);
     }
 
-
-    
-    // redraw points
-    var point = main.selectAll("circle").data(main_data);
-    
-    point.attr("class", "update");
-
-    point.enter().append("circle")
-    .attr("class", "enter")
-    .attr("cx", function(d) { return main_xscale(d.time); })
-    .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 5)
-    .classed("selected", function(d) { return d.selected; })
-    .merge(point)
-    .attr("class", "point")
-    .attr("cx", function(d) { return main_xscale(d.time); })
-    .attr("cy", function(d) { return main_yscale(d.val); })
-    .attr("r", 5)
-    .classed("selected", function(d) { return d.selected; });
-    
-    point.exit().remove();
-
+    /* add hover and click-label functionality for primary series points */
     var timer;
-    
+
     main.selectAll(".point")
+    .filter((d, i) => d.series == selectedSeries)
     .moveToFront()
     .attr("fill-opacity", "0.7")
     .on("click", function(point){
@@ -903,10 +867,55 @@ function labeller () {
     $('#maindiv').css("opacity", "0.5");
   });
 
-  $('.dropdown-item').click(function() {
-    $('.dropdown-item').not(this).removeClass('active');
-    $(this).toggleClass('active');
-    brushSelector = $('.dropdown-item.active').html();
+  window.addEventListener("keydown", function(e) {
+      // space and arrow keys
+      if([40].indexOf(e.keyCode) > -1) {
+          transform_context(0, 2);
+          try  {
+            e.preventDefault();
+          } catch (e) {
+            // do nothing
+          }
+      } else if ([38].indexOf(e.keyCode) > -1) {
+          transform_context(0, -2);
+          try  {
+            e.preventDefault();
+          } catch (e) {
+            // do nothing
+          }
+      }
+  }, false);
+
+  d3.select(window).on("keydown", function(e) {
+    shiftKey = d3.event.shiftKey;
+    if (shiftKey) {
+      shiftKey = true;
+    } else {
+      shiftKey = false;
+    }
+    var code = d3.event.keyCode;
+    if (code === 37) {
+      if (shiftKey) {
+        transform_context(-9, 0);
+      } else {
+        transform_context(-1, 0);
+      }
+    } else if (code === 39) {
+      if (shiftKey) {
+        transform_context(9, 0);
+      } else {
+        transform_context(1, 0);
+      }
+    }
+  });
+
+  d3.select(window).on("keyup", function() {
+    shiftKey = d3.event.shiftKey;
+    if (shiftKey) {
+      shiftKey = true;
+    } else {
+      shiftKey = false;
+    }
   });
 
 }

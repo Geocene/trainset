@@ -37,6 +37,7 @@ export default {
     nextUp: Boolean
   },
   methods: {
+    // push Labeler.vue invalid landing
     error() {
       this.$router.push({
         name: 'labeler',
@@ -49,6 +50,7 @@ export default {
         }
       });
     },
+    // trigger file upload
     shouldUpload() {
       if (this.nextUp === true) {
         this.$nextTick(function() {this.upload()});
@@ -57,33 +59,7 @@ export default {
     upload () {
       this.$refs.fileInput.click()
     },
-    parseDate (date) {
-      var parts = date.split(/\D/);
-      return new Date()
-    },
-    toISOString (date) {
-      var tzo = -date.getTimezoneOffset(),
-          dif = tzo >= 0 ? '+' : '-',
-          pad = function(num) {
-              var norm = Math.floor(Math.abs(num));
-              return (norm < 10 ? '0' : '') + norm;
-          },
-          padms = function(ms) {
-            ms = ms.toString()
-            while (ms.length < 3) {
-              ms = "0" + ms
-            }
-            return ms
-          };
-      return date.getFullYear() +
-          '-' + pad(date.getMonth() + 1) +
-          '-' + pad(date.getDate()) +
-          'T' + pad(date.getHours()) +
-          ':' + pad(date.getMinutes()) +
-          ':' + pad(date.getSeconds()) +
-          '.' + padms(date.getMilliseconds()) +
-          dif + pad(tzo / 60) + pad(tzo % 60);
-    },
+    // check format validity of csv
     fileCheck () {
       window.onerror = (errorMsg, url, lineNumber) => {
         this.error();
@@ -92,9 +68,7 @@ export default {
       var filename = fileInput.name.split('.csv')[0];
       var id = 0;
       var reader = new FileReader();
-      var seriesList = new Set();
-      var plotDict = [];
-      var headerStr;
+      var seriesList = new Set(), plotDict = [], headerStr;
       reader.readAsBinaryString(fileInput);
       reader.onloadend = () => {
         fileText = $.csv.toArrays(reader.result);
