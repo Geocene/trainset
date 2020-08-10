@@ -197,10 +197,9 @@ function labeller () {
   var main_xaxis = d3.axisBottom(main_xscale),
   context_xaxis = d3.axisBottom(context_xscale),
   yaxis = d3.axisLeft(main_yscale),
-  refaxis = d3.axisRight(secondary_yscale);
+  refaxis = d3.axisRight(secondary_yscale), 
+  y_axis, ref_axis;
 
-  var y_axis;
-  var ref_axis;
 
   //plotting areas
   var svg = d3.select("#maindiv").append("svg")
@@ -231,29 +230,23 @@ function labeller () {
   };
 
   d3.selection.prototype.moveToBack = function() {  
-        return this.each(function() { 
-            var firstChild = this.parentNode.firstChild; 
-            if (firstChild) {
-                this.parentNode.insertBefore(this, firstChild); 
-            } 
-        });
-    };
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) {
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    });
+  };
 
   //something about clipping, not sure what this is doing yet
-  svg.append("defs").append("clipPath")
-  .attr("id", "clip")
-  .append("rect")
-  .attr("width", width)
-  .attr("height", main_height);
+  // svg.append("defs").append("clipPath")
+  // .attr("id", "clip")
+  // .append("rect")
+  // .attr("width", width)
+  // .attr("height", main_height);
 
-  //main window
-  var main = svg.append("g")
-  .attr("class", "main")
-  .attr("transform", "translate(" + main_margin.left + "," + main_margin.top + ")");
-
-
+  // add ref graph selector if len(seriesList) > 1
   if (window.seriesList.length > 1) {
-    // add ref graph selector
     svg.append("g")
     .attr("class", "ref_selector")
     .attr("transform", "translate(" + (context_margin.left - 55) + "," + (context_margin.top - 10) + ")")
@@ -273,6 +266,11 @@ function labeller () {
       }
     });
   }
+
+  //main window
+  var main = svg.append("g")
+  .attr("class", "main")
+  .attr("transform", "translate(" + main_margin.left + "," + main_margin.top + ")");
 
   // smaller context window
   var context = svg.append("g")
@@ -398,7 +396,7 @@ function labeller () {
     return d;
   }
 
-  function pad_extent(extent,padding){
+  function pad_extent(extent,padding) {
     padding = (typeof padding === "undefined") ? 0.01 : padding;
     var range=extent[1]-extent[0];
     //1*x is quick hack to handle date/time axes
@@ -406,13 +404,15 @@ function labeller () {
 
   }
 
-  function replot () {
-    // Build quadtree for fast brushing
-    quadtree=d3.quadtree()
-              .x(function(d) { return d.time; })
-              .y(function(d) { return d.val; })
-              .addAll(data);
-    
+  function updateYAxis() {
+    // set y-axis based on selected series
+    var y_vals = data.map(d => d.val);
+    var minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
+    main_yscale.domain(pad_extent(minMax, 0.1));
+    context_yscale.domain(pad_extent(main_yscale.domain()));
+  }
+
+  function downsampleContext() {
     // Downsample context data for big datasets
     var sampler = largestTriangleThreeBucket();
     
@@ -422,37 +422,33 @@ function labeller () {
 
     // Configure the size of the buckets used to downsample the data.
     // Have at most 1000 context points
-    var bucket_size = Math.max(Math.round(data.length/1000),1);
+    var bucket_size = Math.max(Math.round(data.length / 1000), 1);
+
+    // bump bucket size if 2 (doesn't preserve outliers)
+    // bucket_size = (bucket_size == 2) ? bucket_size + 1 : bucket_size;
+
     sampler.bucketSize(bucket_size);
     
     context_data = sampler(data);
+  }
 
-    // set y-axis based on selected series
-    var y_vals = data.map(d => d.val);
-    var minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
-    main_yscale.domain(pad_extent(minMax, 0.1));
+  function replot () {
+    // Build quadtree for fast brushing
+    quadtree = d3.quadtree()
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
+              .addAll(data);
+    
+    downsampleContext();
 
-    context_yscale.domain(pad_extent(main_yscale.domain()));
+    updateYAxis();
 
     main.select(".x.axis").call(main_xaxis);
 
     context_plot.remove();
     context_points.remove();
 
-    //context plot
-    context_plot = context.append("path")
-    .datum(context_data)
-    .attr("class", "line")
-    .attr("d", context_line);
-
-
-    context_points = context.selectAll(".point")
-    .data(context_data)
-    .enter().append("circle")
-    .attr("class", "point")
-    .attr("cx", function(d) { return context_xscale(d.time); })
-    .attr("cy", function(d) { return context_yscale(d.val); })
-    .attr("r", 2);
+    plotContext();
 
     // redraw y axis
     y_axis.remove();
@@ -489,6 +485,36 @@ function labeller () {
     update_selection();
   }
 
+  function plotContext() {
+    //context plot
+    context_plot = context.append("path")
+    .datum(context_data)
+    .attr("class", "line")
+    .attr("d", context_line);
+
+
+    context_points = context.selectAll(".point")
+    .data(context_data)
+    .enter().append("circle")
+    .attr("class", "point")
+    .attr("cx", function(d) { return context_xscale(d.time); })
+    .attr("cy", function(d) { return context_yscale(d.val); })
+    .attr("r", 2);
+
+    // create x axis and brush elm if doesn't exist (on first plot)
+    if (!conBrush) {
+      context.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + context_height + ")")
+      .call(context_xaxis);
+
+
+      conBrush = context.append("g")
+      .attr("class", "context_brush")
+      .call(context_brush);
+    }
+  }
+
   function init () {
     data = window.PLOTDATA;
     allData = data.map(type);
@@ -501,23 +527,11 @@ function labeller () {
               .y(function(d) { return d.val; })
               .addAll(data);
     
-    // Downsample context data for big datasets
-    var sampler = largestTriangleThreeBucket();
-    
-    // Configure the x / y value accessors
-    sampler.x(function (d) { return d.x; })
-        .y(function (d) { return d.y; });
-
-    // Configure the size of the buckets used to downsample the data.
-    // Have at most 1000 context points
-    var bucket_size = Math.max(Math.round(data.length/1000),1);
-    sampler.bucketSize(bucket_size);
-    
-    context_data = sampler(data);
+    downsampleContext();
 
     // Set default focus
     var start_date = data[0].time
-    if(window.view_or_label=="label"){
+    if (window.view_or_label=="label") {
       if (data.length <= 100) {
         var end_date = data[data.length-1].time;
       } else if (data.length <= 1000) {
@@ -536,12 +550,7 @@ function labeller () {
     defaultExtent[0] = context_xscale.domain()[0];
     main_xscale.domain(defaultExtent);
 
-    // set y-axis based on selected series
-    var y_vals = data.map(d => d.val);
-    var minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
-    main_yscale.domain(pad_extent(minMax, 0.1));
-
-    context_yscale.domain(pad_extent(main_yscale.domain()));
+    updateYAxis();
     
     // make the plots
     makeplot(data, context_data);
@@ -567,7 +576,7 @@ function labeller () {
     return inView;
   }
 
-  function update_main(data){
+  function update_main(data) {
 
     
     // subset to only data in current domain
@@ -685,30 +694,7 @@ function labeller () {
 
     update_main(data);
     
-    //context plot
-    context_plot = context.append("path")
-    .datum(context_data)
-    .attr("class", "line")
-    .attr("d", context_line);
-
-
-    context_points = context.selectAll(".point")
-    .data(context_data)
-    .enter().append("circle")
-    .attr("class", "point")
-    .attr("cx", function(d) { return context_xscale(d.time); })
-    .attr("cy", function(d) { return context_yscale(d.val); })
-    .attr("r", 2);
-
-    context.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + context_height + ")")
-    .call(context_xaxis);
-
-
-    conBrush = context.append("g")
-    .attr("class", "context_brush")
-    .call(context_brush);
+    plotContext();
 
     // store the reference to the original handler
     var oldMousedown = conBrush.on('mousedown.brush');
@@ -722,7 +708,7 @@ function labeller () {
         conBrush.on('mousemove.brush', function () {
             clearHandlers();
             oldMousedown.call(this);
-            conBrush.on('mousemove.brush').call(this);
+            // conBrush.on('mousemove.brush').call(this);
         });
 
         function clearHandlers() {
@@ -749,8 +735,8 @@ function labeller () {
     main.select(".x.axis").call(main_xaxis);
 
     
-    var limits=context_xscale.domain();
-    if(context_brush.extent()[1]>=1*context_xscale.domain()[1]){
+    var limits = context_xscale.domain();
+    if (context_brush.extent()[1]>=1*context_xscale.domain()[1]) {
       console.log("far right");
     }
   }
@@ -763,37 +749,36 @@ function labeller () {
     });
 
 
-    var offset0=((1-Math.pow(1.1,scale))+0.1*shift)*(currentExtent[1]-currentExtent[0]);
-    var offset1=((Math.pow(1.1,scale)-1)+0.1*shift)*(currentExtent[1]-currentExtent[0]);
+    var offset0 = ((1-Math.pow(1.1,scale))+0.1*shift)*(currentExtent[1]-currentExtent[0]);
+    var offset1 = ((Math.pow(1.1,scale)-1)+0.1*shift)*(currentExtent[1]-currentExtent[0]);
 
-    //don't shift past the ends of the scale
-    //still need to work on the limiting code : scroll right shrinks.
-    var limits=context_xscale.domain();
+    // don't shift past the ends of the scale
+    var limits = context_xscale.domain();
 
-    //if we go off the left edge, don't allow us to move left
-    if((1*currentExtent[0])+offset0<limits[0]){
-      shift=0;
-      offset0=limits[0]-currentExtent[0];
-      offset1=offset0+((Math.pow(1.1,scale)-1)+0.1*shift)*(currentExtent[1]-currentExtent[0]);
+    // if we go off the left edge, don't allow us to move left
+    if ((1*currentExtent[0])+offset0<limits[0]) {
+      shift = 0;
+      offset0 = limits[0]-currentExtent[0];
+      offset1 = offset0+((Math.pow(1.1,scale)-1)+0.1*shift)*(currentExtent[1]-currentExtent[0]);
     }
 
-    //if we go off the right edge, don't allow us to move right
-    if((1*currentExtent[1])+offset1>limits[1]){
-      shift=0;
-      offset1=limits[1]-currentExtent[1];
-      offset0=offset1+((1-Math.pow(1.1,scale))+0.1*shift)*(currentExtent[1]-currentExtent[0]);
+    // if we go off the right edge, don't allow us to move right
+    if ((1*currentExtent[1])+offset1>limits[1]) {
+      shift = 0;
+      offset1 = limits[1]-currentExtent[1];
+      offset0 = offset1+((1-Math.pow(1.1,scale))+0.1*shift)*(currentExtent[1]-currentExtent[0]);
 
     }
 
-    //double check that the last bit didn't push us too far left
-    if((1*currentExtent[0])+offset0<limits[0]){
-      shift=0;
-      offset0=limits[0]-currentExtent[0];
+    // double check that the last bit didn't push us too far left
+    if ((1*currentExtent[0])+offset0<limits[0]) {
+      shift = 0;
+      offset0 = limits[0]-currentExtent[0];
     }
 
 
-    //do shift and update brushing
-    var newExtent=[(1*currentExtent[0])+offset0,(1*currentExtent[1])+offset1];
+    // do shift and update brushing
+    var newExtent = [(1*currentExtent[0])+offset0,(1*currentExtent[1])+offset1];
 
     conBrush.call(context_brush.move, newExtent.map(function(d) { return context_xscale(d); }));
 
@@ -802,11 +787,12 @@ function labeller () {
   
   // Find the nodes within the specified rectangle.
   function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+    // use quadtree to brush points in defined rectangle
     quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
         do {
           var d = node.data;
-          // invert selection for points in brush
+          // change selected property of points in brush
           if (!shiftKey) {
             d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
           } else {
@@ -821,12 +807,12 @@ function labeller () {
     });
   }
 
-  function update_selection(){
+  function update_selection() {
     main.selectAll(".point").classed("selected", function(d) { return d.selected; });
     context.selectAll(".point").classed("selected", function(d) { return d.selected; });
   }
 
-  function brushed_main(){
+  function brushed_main() {
     var extent = d3.brushSelection(mainBrush.node());
     if (extent === null) {
       return;
