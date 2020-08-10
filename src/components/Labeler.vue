@@ -548,7 +548,7 @@ function labeller () {
         return x_domain[0] <= d.time & d.time<=x_domain[1]
       });
 
-    var total_data = secondary_data == null ? main_data : [...main_data, ...secondary_data.filter(d => d.selected != 0)];
+    var total_data = secondary_data == null ? main_data : [...main_data, ...secondary_data];
 
     // redraw path
     var path = main.selectAll("path");
