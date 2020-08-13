@@ -388,6 +388,10 @@ function labeller () {
     .attr("class", "context_brush")
     .call(plottingApp.context_brush);
 
+    // move brushes to back
+    plottingApp.plot.main_brush.moveToBack();
+    plottingApp.plot.context_brush.moveToBack();
+
     // disable click selection clear on context brush
 
     // store the reference to the original handler
@@ -581,13 +585,15 @@ function labeller () {
         .attr("class","line")
         .attr("id", "secondary_line")
         .attr("fill-opacity", "0.4")
-        .attr("d", plottingApp.secondary_line);
+        .attr("d", plottingApp.secondary_line)
+        .moveToBack();
 
       plottingApp.main.selectAll(".point")
       .filter((d, i) => d.series == plottingApp.refSeries)
       .attr("fill-opacity", "0.4")
       .attr("r", 2)
-      .attr("pointer-events", "none");
+      .attr("pointer-events", "none")
+      .moveToBack();
     }
 
     /* add hover and click-label functionality for primary series points */
@@ -768,6 +774,7 @@ function labeller () {
      else, disable mouseover info modal */
   function toggleHoverinfo(b) {
     if (b) {
+      // enable mouseover/mouseout hoverinfo
       plottingApp.main.selectAll(".point")
       .on("mouseover", function(point) {
           plottingApp.hoverTimer = setTimeout(function() {
@@ -776,16 +783,22 @@ function labeller () {
         })
       .on("mouseout", function() {
           clearTimeout(plottingApp.hoverTimer);
+          plottingApp.hoverTimer = null;
           update_hoverinfo("", "", "");
       });
     } else {
+      // clear hoverinfo and timeout
+      if (plottingApp.hoverTimer) {
+        clearTimeout(plottingApp.hoverTimer);
+        update_hoverinfo("", "", "");
+      }
+      
+      // replace handler
       plottingApp.main.selectAll(".point")
       .on("mouseover", function(e) {
-        alert('caught mouseover');
         e.preventDefault();
       })
       .on("mouseout", function(e) {
-        alert('caught mouseout')
         e.preventDefault();
       });
     }
@@ -885,7 +898,7 @@ function labeller () {
     padding = (typeof padding === "undefined") ? 0.01 : padding;
     var range = extent[1]-extent[0];
     // 1*x is quick hack to handle date/time axes
-    return [(1 * extent[0]) - padding * range, (1 * extent[1]) + padding * range];
+    return [(1 * extent[0]) - padding * range, (1 * extent[1]) + padding * range].map(d => d.toFixed(3));
 
   }
 
