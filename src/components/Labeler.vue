@@ -47,7 +47,7 @@
       <button type="button" class="btn btn-light" id="errorOk" @click="goHome()">Ok</button>
     </div>
     <div class="modalBox" id="editAxis" style="display: none;">
-      <h5 class="modalInfo">Edit {{ editSeries }} Bounds</h5>
+      <h5 class="modalInfo">Edit Axis Bounds</h5>
       <hr>
       <div class="modalInfo modalMsg">
         <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
@@ -122,7 +122,6 @@ export default {
       val: "",
       time: "",
       hoverSeries: "",
-      editSeries: "",
       axisBounds: []
     };
   },
@@ -158,7 +157,6 @@ export default {
       },
       // update #editAxis info
       updateEditinfo() {
-        this.editSeries = window.editSeries;
         this.axisBounds = window.axisBounds[window.editSeries];
       },
       // cancel clear all series labels
@@ -600,19 +598,12 @@ function labeller () {
     .moveToFront()
     .attr("fill-opacity", "0.7")
     .on("click", function(point){
-        //allow clicking on single points
-        point.selected=1-point.selected;
-        update_selection();
-      })
-    .on("mouseover", function(point) {
-        timer = setTimeout(function() {
-          update_hoverinfo(point.actual_time, point.val, point.series);
-        }, 250);  
-      })
-    .on("mouseout", function() {
-        clearTimeout(timer);
-        update_hoverinfo("", "", "");
-    });
+          //allow clicking on single points
+          point.selected=1-point.selected;
+          update_selection();
+        });
+
+    toggleHoverinfo(true);
 
     // update xAxis svg element
     plottingApp.main.select(".x.axis").call(plottingApp.main_xaxis);
@@ -740,9 +731,14 @@ function labeller () {
     // do shift and update brushing
     var newExtent = [(1 * currentExtent[0]) + offset0,(1 * currentExtent[1]) + offset1];
 
+    // disable mouseover info while shifting
+    toggleHoverinfo(false);
+
     plottingApp.plot.context_brush.call(plottingApp.context_brush.move, 
       newExtent.map(function(d) { return plottingApp.context_xscale(d); }));
 
+    // re-enable mouseover info
+    toggleHoverinfo(true);
   }
   
   // Find the nodes within the specified rectangle.
@@ -765,6 +761,32 @@ function labeller () {
       // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
       return quad_xmin >= brush_xmax || quad_ymin >= brush_ymax || quad_xmax < brush_xmin || quad_ymax < brush_ymin;
     });
+  }
+
+  /* if b == true, enable mouseover info modal
+     else, disable mouseover info modal */
+  function toggleHoverinfo(b) {
+    if (b) {
+      plottingApp.main.selectAll(".point")
+      .on("mouseover", function(point) {
+          plottingApp.hoverTimer = setTimeout(function() {
+            update_hoverinfo(point.actual_time, point.val, point.series);
+          }, 250);  
+        })
+      .on("mouseout", function() {
+          clearTimeout(plottingApp.hoverTimer);
+          update_hoverinfo("", "", "");
+      });
+    } else {
+      plottingApp.main.selectAll(".point")
+      .on("mouseover", function(e) {
+        e.preventDefault();
+      })
+      .on("mouseout", function(e) {
+        e.preventDefault();
+      });
+    }
+    
   }
 
   /* update hoverbox info with point data */
