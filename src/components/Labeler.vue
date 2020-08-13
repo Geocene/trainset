@@ -245,8 +245,8 @@ function labeller () {
   //can adjust multiscale time ticks: http://bl.ocks.org/mbostock/4149176
   plottingApp.main_xaxis = d3.axisBottom(plottingApp.main_xscale),
   plottingApp.context_xaxis = d3.axisBottom(plottingApp.context_xscale),
-  plottingApp.yaxis = d3.axisLeft(plottingApp.main_yscale),
-  plottingApp.refaxis = d3.axisRight(plottingApp.secondary_yscale);
+  plottingApp.y_axis = d3.axisLeft(plottingApp.main_yscale),
+  plottingApp.ref_axis = d3.axisRight(plottingApp.secondary_yscale);
 
   var viewBox_width = plottingApp.width + plottingApp.main_margin.left + plottingApp.main_margin.right,
   viewBox_height = plottingApp.main_height + plottingApp.main_margin.top + plottingApp.main_margin.bottom;
@@ -290,7 +290,7 @@ function labeller () {
   .attr("class", "context")
   .attr("transform", "translate(" + plottingApp.context_margin.left + "," + plottingApp.context_margin.top + ")");
 
-  //brushes
+  // d3 brushes
   plottingApp.main_brush = d3.brush()
   .extent([[0,0], [plottingApp.width, plottingApp.main_height]])
   .on("end", brushedMain);
@@ -300,7 +300,7 @@ function labeller () {
   .on("end", brushedContext)
   .on("brush", limitContext);
 
-  //lines
+  // d3 lines
   plottingApp.main_line = d3.line()
   .curve(d3.curveLinear)
   .x(function(d) { return plottingApp.main_xscale(d.time); })
@@ -332,10 +332,476 @@ function labeller () {
   plottingApp.brushSelector = "Invert",
   plottingApp.selectedSeries = $("#seriesSelect option:selected").val(),
   plottingApp.refSeries = "";
+  // plot namespace (for svg selections associated with d3 objects)
+  plottingApp.plot = {};
 
   $(function () {
    init();
   });
+
+  /* initialize plots with default series data */
+  function init() {
+    plottingApp.allData = plottingApp.csvData.map(type);
+    plottingApp.data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
+    
+    updateBrushData();
+
+    // get default focus
+    var defaultExtent = getDefaultExtent();
+    // set scales based on loaded data, default focus
+    plottingApp.context_xscale.domain(pad_extent(d3.extent(
+      plottingApp.allData.map(function(d) { return d.time; })))); // xaxis set according to allData
+    
+    defaultExtent[0] = plottingApp.context_xscale.domain()[0];
+    plottingApp.main_xscale.domain(defaultExtent);
+
+    initPlot();
+    updateYAxis();
+    updateMain();
+    plotContext();
+
+    plottingApp.plot.context_brush.call(plottingApp.context_brush.move, 
+      defaultExtent.map(plottingApp.context_xscale));
+    plottingApp.plot.context_brush.moveToBack();
+
+    // remove loading bar
+    $(".loader").css("display", "none");
+  }
+
+  /* initialize plot brushes, axes */
+  function initPlot() {
+    // create context and main x axes
+    plottingApp.main.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + plottingApp.main_height + ")")
+    .call(plottingApp.main_xaxis);
+
+    plottingApp.context.append("g")
+      .attr("transform", "translate(0," + plottingApp.context_height + ")")
+      .attr("class", "x axis")
+      .call(plottingApp.context_xaxis);
+
+    // create main and context brushes
+    plottingApp.plot.main_brush = plottingApp.main.append("g")
+    .attr("class", "main_brush")
+    .call(plottingApp.main_brush);
+
+    plottingApp.plot.context_brush = plottingApp.context.append("g")
+    .attr("class", "context_brush")
+    .call(plottingApp.context_brush);
+
+    // disable click selection clear on context brush
+
+    // store the reference to the original handler
+    var oldMousedown = plottingApp.plot.context_brush.on("mousedown.brush");
+
+    // and replace it with our custom handler
+    plottingApp.plot.context_brush.on("mousedown.brush", function () {
+        plottingApp.plot.context_brush.on("mouseup.brush", function () {
+            clearHandlers();
+        });
+
+        plottingApp.plot.context_brush.on("mousemove.brush", function () {
+            clearHandlers();
+            oldMousedown.call(this);
+            // plottingApp.plot.context_brush.on('mousemove.brush').call(this);
+        });
+
+        function clearHandlers() {
+            plottingApp.plot.context_brush.on("mousemove.brush", null);
+            plottingApp.plot.context_brush.on("mouseup.brush", null);
+        }
+    });
+  }
+
+  /* plot context graph line */
+  function plotContext() {
+    // if context line already exists, delete it
+    if (plottingApp.plot.context_line) {
+      plottingApp.plot.context_line.remove();
+    }
+
+    //context plot
+    plottingApp.plot.context_line = plottingApp.context.append("path")
+    .datum(plottingApp.context_data)
+    .attr("class", "line")
+    .attr("d", plottingApp.context_line);
+
+
+    plottingApp.context_points = plottingApp.context.selectAll(".point")
+    .data(plottingApp.context_data)
+    .join("circle")
+    .attr("class", "point")
+    .attr("cx", function(d) { return plottingApp.context_xscale(d.time); })
+    .attr("cy", function(d) { return plottingApp.context_yscale(d.val); })
+    .attr("r", 2)
+    .classed("selected", function(d) { return d.selected; });
+  }
+
+  /* update yaxes bounds based on selected and reference series */
+  function updateYAxis() {
+    // set y-axis based on selected series
+    var minMax;
+    if (window.axisBounds[plottingApp.selectedSeries]) {
+      minMax = window.axisBounds[plottingApp.selectedSeries];
+    } else {
+      minMax = getMinMax(plottingApp.selectedSeries);
+      window.axisBounds[plottingApp.selectedSeries] = minMax;
+    }
+
+    plottingApp.main_yscale.domain(minMax);
+    plottingApp.context_yscale.domain(pad_extent(getMinMax(plottingApp.selectedSeries)));
+
+    // redraw / draw primary y axis
+    if (plottingApp.plot.y_axis) {
+      plottingApp.plot.y_axis.remove();
+    }
+
+    plottingApp.plot.y_axis = plottingApp.main.append("g")
+    .attr("class", "y axis primary")
+    .call(plottingApp.y_axis)
+    .call(g => g.select(".domain").remove());
+
+    // add primary y axis label
+    var axisBox = plottingApp.plot.y_axis.node().getBBox();
+    plottingApp.main.select(".y.axis.primary").append("text")
+    .attr("class", "y label primary")
+    .attr("text-anchor", "middle")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - axisBox.width - plottingApp.label_margin.small)
+    .attr("x", 0 - plottingApp.main_height / 2)
+    .attr("fill", "currentColor")
+    .text(plottingApp.selectedSeries);
+
+    // handle editable primary y axis
+    var lastTick = plottingApp.main.selectAll(".y.axis.primary .tick").last(),
+    translateY = Number(lastTick.attr("transform").split(",")[1].slice(0, -1)); // drop Edit button to highest tick
+
+    plottingApp.main.select(".y.axis.primary").append("g")
+    .attr("class", "button y primary")
+    .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")")
+    .append("text")
+    .text("Edit")
+    .attr("dy", "0.32em")
+    .attr("cursor", "default")
+    .attr("fill", "currentColor")
+    .on("click", function(d, i) { return updateMainY(plottingApp.selectedSeries); });
+
+    // handle redraw reference y axis
+    if (plottingApp.plot.ref_axis) {
+      plottingApp.plot.ref_axis.remove();
+    }
+
+    // handle ref series
+    if (plottingApp.refSeries != "" && plottingApp.selectedSeries != plottingApp.refSeries) {
+      if (window.axisBounds[plottingApp.refSeries]) {
+        minMax = window.axisBounds[plottingApp.refSeries];
+      } else {
+        minMax = getMinMax(plottingApp.refSeries);
+        window.axisBounds[plottingApp.refSeries] = minMax;
+      }
+
+      plottingApp.secondary_yscale.domain(minMax);
+
+      plottingApp.plot.ref_axis = plottingApp.main.append("g")
+      .attr("class", "y axis secondary")
+      .attr("transform", "translate(" + plottingApp.width + ",0)")
+      .call(plottingApp.ref_axis)
+      .call(g => g.select(".domain").remove());
+
+      // add reference y axis label
+      axisBox = plottingApp.plot.ref_axis.node().getBBox();
+      plottingApp.main.select(".y.axis.secondary").append("text")
+          .attr("class", "y label secondary")
+          .attr("text-anchor", "middle")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 0 + axisBox.width + plottingApp.label_margin.large)
+          .attr("x", 0 - plottingApp.main_height / 2)
+          .attr("fill", "currentColor")
+          .text(plottingApp.refSeries);
+
+      // handle editable primary y axis
+      lastTick = plottingApp.main.selectAll(".y.axis.secondary .tick").last(),
+      translateY = lastTick.attr("transform").split(",")[1].slice(0, -1); // drop Edit button to highest tick
+
+      plottingApp.main.select(".y.axis.secondary").append("g")
+      .attr("class", "button y secondary")
+      .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")")
+      .append("text")
+      .text("Edit")
+      .attr("dy", "0.32em")
+      .attr("cursor", "default")
+      .attr("fill", "currentColor")
+      .on("click", function(d, i) { return updateMainY(plottingApp.refSeries); });
+    }
+  }
+
+  /* redraw main graph with new points */
+  function updateMain() {
+    // subset to only data in current domain
+    var x_domain = plottingApp.main_xscale.domain();
+
+    var  main_data = plottingApp.data.filter(function(d){
+      return x_domain[0] <= d.time & d.time <= x_domain[1]
+    });
+
+    // handles ref series
+    var secondary_data = plottingApp.refSeries == "" || 
+      plottingApp.refSeries == plottingApp.selectedSeries ? null : plottingApp.allData
+        .filter(d => d.series == plottingApp.refSeries)
+        .filter(function(d) {
+          return x_domain[0] <= d.time & d.time <= x_domain[1]
+        });
+
+    var total_data = secondary_data == null ? main_data : [...main_data, ...secondary_data];
+
+    // redraw path
+    var path = plottingApp.main.selectAll("path");
+    path.remove();
+
+    // add primary series data line
+    plottingApp.main.append("path")
+      .datum(main_data)
+      .attr("class","line")
+      .attr("fill-opacity", "0.7")
+      .attr("d", plottingApp.main_line);
+
+    // redraw points
+    var point = plottingApp.main.selectAll("circle").data(total_data);
+
+    point.join("circle")
+    .attr("class", "point")
+    .attr("cx", function(d) { return plottingApp.main_xscale(d.time); })
+    .attr("cy", function(d) { return selectYScale(d); })
+    .attr("r", 5)
+    .classed("selected", function(d) { return d.selected; });
+
+    // add secondary line and update secondary point styling if there is reference
+    if (secondary_data) {
+      plottingApp.main.append("path")
+        .datum(secondary_data)
+        .attr("class","line")
+        .attr("id", "secondary_line")
+        .attr("fill-opacity", "0.4")
+        .attr("d", plottingApp.secondary_line);
+
+      plottingApp.main.selectAll(".point")
+      .filter((d, i) => d.series == plottingApp.refSeries)
+      .attr("fill-opacity", "0.4")
+      .attr("r", 2)
+      .attr("pointer-events", "none");
+    }
+
+    /* add hover and click-label functionality for primary series points */
+    var timer;
+
+    plottingApp.main.selectAll(".point")
+    .filter((d, i) => d.series == plottingApp.selectedSeries)
+    .moveToFront()
+    .attr("fill-opacity", "0.7")
+    .on("click", function(point){
+        //allow clicking on single points
+        point.selected=1-point.selected;
+        update_selection();
+      })
+    .on("mouseover", function(point) {
+        timer = setTimeout(function() {
+          update_hoverinfo(point.actual_time, point.val, point.series);
+        }, 250);  
+      })
+    .on("mouseout", function() {
+        clearTimeout(timer);
+        update_hoverinfo("", "", "");
+    });
+
+    // update xAxis svg element
+    plottingApp.main.select(".x.axis").call(plottingApp.main_xaxis);
+  }
+
+  /* replot svg after changing series */
+  function replot() {
+    updateBrushData();
+    updateYAxis();
+    plotContext();
+    updateMain();
+    update_selection();
+  }
+
+  /* downsample context points using largest triangle three buckets algorithm
+     and build quadtree for main brushing */
+  function updateBrushData() {
+    // Build quadtree for fast brushing
+    plottingApp.quadtree = d3.quadtree()
+              .x(function(d) { return d.time; })
+              .y(function(d) { return d.val; })
+              .addAll(plottingApp.data);
+
+    // Downsample context data for big datasets
+    var sampler = largestTriangleThreeBucket();
+    
+    // Configure the x / y value accessors
+    sampler.x(function (d) { return d.x; })
+        .y(function (d) { return d.y; });
+
+    // Configure the size of the buckets used to downsample the data.
+    // Have at most 1000 context points
+    var bucket_size = Math.max(Math.round(plottingApp.data.length / 1000), 1);
+
+    // bump bucket size if 2 (doesn't preserve outliers)
+    // bucket_size = (bucket_size == 2) ? bucket_size + 1 : bucket_size;
+
+    sampler.bucketSize(bucket_size);
+    
+    plottingApp.context_data = sampler(plottingApp.data);
+  }
+
+  function createInView(domain) {
+    function inView(d) {
+      var dom = domain.map(function(d) { return plottingApp.context_xscale(d); });
+      return plottingApp.context_xscale(d.x) >= dom[0] && plottingApp.context_xscale(d.x) <= dom[1];
+    }
+    return inView;
+  }  
+
+  function brushedMain() {
+    var extent = d3.brushSelection(plottingApp.plot.main_brush.node());
+    if (extent === null) {
+      return;
+    }
+    
+    // convert pixels defining brush into actual time, value scales
+    var xmin = plottingApp.main_xscale.invert(extent[0][0]),
+    xmax = plottingApp.main_xscale.invert(extent[1][0]),
+    ymax = plottingApp.main_yscale.invert(extent[0][1]),
+    ymin = plottingApp.main_yscale.invert(extent[1][1]);
+    
+    search(plottingApp.quadtree, xmin, ymin, xmax, ymax);
+    update_selection();
+    plottingApp.plot.main_brush.call(plottingApp.main_brush.move, null);
+  }
+
+  function limitContext() {
+    var s = d3.brushSelection(plottingApp.plot.context_brush.node()).map(plottingApp.context_xscale.invert, plottingApp.context_xscale);
+    var brushData = plottingApp.data.filter(createInView(s));
+    if (brushData.length >= 2000) {
+      var firstIndex = plottingApp.data.map(function(d) { return d.time; }).indexOf(s[0]);
+    }
+  }
+
+  function brushedContext() {
+    var s = d3.brushSelection(plottingApp.plot.context_brush.node()) || plottingApp.context_xscale.range();
+    plottingApp.main_xscale.domain(s.map(plottingApp.context_xscale.invert, plottingApp.context_xscale));
+
+    updateMain();
+
+    
+    var limits = plottingApp.context_xscale.domain();
+    if (plottingApp.context_brush.extent()[1] >= 1 * plottingApp.context_xscale.domain()[1]) {
+      console.log("far right");
+    }
+  }
+
+  //keyboard functions to change the focus
+  function transform_context(shift,scale) {
+    var currentExtent = d3.brushSelection(plottingApp.plot.context_brush.node());
+    currentExtent = currentExtent.map(function(d) {
+      return plottingApp.context_xscale.invert(d);
+    });
+
+
+    var offset0 = ((1 - Math.pow(1.1,scale)) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
+    var offset1 = ((Math.pow(1.1,scale) - 1) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
+
+    // don't shift past the ends of the scale
+    var limits = plottingApp.context_xscale.domain();
+
+    // if we go off the left edge, don't allow us to move left
+    if ((1*currentExtent[0])+offset0<limits[0]) {
+      shift = 0;
+      offset0 = limits[0] - currentExtent[0];
+      offset1 = offset0 + ((Math.pow(1.1,scale) - 1) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
+    }
+
+    // if we go off the right edge, don't allow us to move right
+    if ((1*currentExtent[1])+offset1>limits[1]) {
+      shift = 0;
+      offset1 = limits[1] - currentExtent[1];
+      offset0 = offset1 + ((1 - Math.pow(1.1,scale)) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
+
+    }
+
+    // double check that the last bit didn't push us too far left
+    if ((1 * currentExtent[0]) + offset0 < limits[0]) {
+      shift = 0;
+      offset0 = limits[0] - currentExtent[0];
+    }
+
+
+    // do shift and update brushing
+    var newExtent = [(1 * currentExtent[0]) + offset0,(1 * currentExtent[1]) + offset1];
+
+    plottingApp.plot.context_brush.call(plottingApp.context_brush.move, 
+      newExtent.map(function(d) { return plottingApp.context_xscale(d); }));
+
+  }
+  
+  // Find the nodes within the specified rectangle.
+  function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
+    // use quadtree to brush points in defined rectangle
+    plottingApp.quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
+      if (!node.length) {
+        do {
+          var d = node.data;
+          // change selected property of points in brush
+          if (!plottingApp.shiftKey) {
+            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
+          } else {
+            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
+          }
+          
+        } while (node = node.next);
+      }
+      
+      // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
+      return quad_xmin >= brush_xmax || quad_ymin >= brush_ymax || quad_xmax < brush_xmin || quad_ymax < brush_ymin;
+    });
+  }
+
+  /* update hoverbox info with point data */
+  function update_hoverinfo(time, val, series) {
+    if (time === "" && val === "" && series == "") {
+      $("#hoverinfo").hide();
+      window.time = "";
+      window.val = "";
+      window.hoverSeries = "";
+      $("#updateHover").click();
+    } else {
+      $("#hoverinfo").show();
+      window.time = time.toString();
+      window.val = val.toFixed(2);
+      window.hoverSeries = series.toString();
+      $("#updateHover").click();
+
+      // fix autosizing selector width
+      $("#selector").width(selectorWidth);
+    }
+  }
+  
+  /* manually update main Y axis with user input */
+  function updateMainY(axis) {
+    $("#editAxis").show();
+    $(".navbar").css("opacity", "0.5");
+    $("#maindiv").css("opacity", "0.5");
+    
+    // handle dynamic data
+    window.editSeries = axis;
+    $("#updateEdit").click();
+  }
+
+  function update_selection() {
+    plottingApp.main.selectAll(".point").classed("selected", function(d) { return d.selected; });
+    plottingApp.context.selectAll(".point").classed("selected", function(d) { return d.selected; });
+  }
 
   /* calculate default extent based on data length */
   function getDefaultExtent() {
@@ -351,43 +817,6 @@ function labeller () {
       end_date = plottingApp.data[Math.round((d_len - 1) / 10)].time;
     }
     return [start_date, end_date]
-  }
-
-  /* initialize plots with default series data */
-  function init() {
-    plottingApp.allData = plottingApp.csvData.map(type);
-    plottingApp.data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
-
-    
-    // Build quadtree for fast brushing
-    plottingApp.quadtree = d3.quadtree()
-              .x(function(d) { return d.time; })
-              .y(function(d) { return d.val; })
-              .addAll(plottingApp.data);
-    
-    downsampleContext();
-
-    // get default focus
-    var defaultExtent = getDefaultExtent();
-    // set scales based on loaded data, default focus
-    plottingApp.context_xscale.domain(pad_extent(d3.extent(
-      plottingApp.allData.map(function(d) { return d.time; })))); // xaxis set according to allData
-    
-    defaultExtent[0] = plottingApp.context_xscale.domain()[0];
-    plottingApp.main_xscale.domain(defaultExtent);
-
-    updateYAxis();
-    plotMain();
-
-    plottingApp.conBrush.call(plottingApp.context_brush.move, 
-      defaultExtent.map(plottingApp.context_xscale));
-    plottingApp.conBrush.moveToBack();
-    
-    // highlight selected points
-    update_selection();
-
-    // remove loading bar
-    $(".loader").css("display", "none");
   }
 
   /* set reference series on checkbox change
@@ -440,453 +869,6 @@ function labeller () {
     var y_vals = plottingApp.allData.filter(d => d.series == axis).map(d => d.val),
     minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
     return pad_extent(minMax, 0.1);
-  }
-
-  /* update yaxes bounds based on selected and reference series */
-  function updateYAxis() {
-    // set y-axis based on selected series
-    var minMax;
-    if (window.axisBounds[plottingApp.selectedSeries]) {
-      minMax = window.axisBounds[plottingApp.selectedSeries];
-    } else {
-      minMax = getMinMax(plottingApp.selectedSeries);
-      window.axisBounds[plottingApp.selectedSeries] = minMax;
-    }
-
-    plottingApp.main_yscale.domain(minMax);
-    plottingApp.context_yscale.domain(pad_extent(getMinMax(plottingApp.selectedSeries)));
-
-    // redraw / draw primary y axis
-    if (plottingApp.y_axis) {
-      plottingApp.y_axis.remove();
-    }
-    
-
-    plottingApp.y_axis = plottingApp.main.append("g")
-    .attr("class", "y axis primary")
-    .call(plottingApp.yaxis)
-    .call(g => g.select(".domain").remove());
-
-    // add primary y axis label
-    var axisBox = plottingApp.y_axis.node().getBBox();
-    plottingApp.main.select(".y.axis.primary").append("text")
-    .attr("class", "y label primary")
-    .attr("text-anchor", "middle")
-    .attr("transform", "rotate(-90)")
-    .attr("y", 0 - axisBox.width - plottingApp.label_margin.small)
-    .attr("x", 0 - plottingApp.main_height / 2)
-    .attr("fill", "currentColor")
-    .text(plottingApp.selectedSeries);
-
-    // handle editable primary y axis
-    var lastTick = plottingApp.main.selectAll(".y.axis.primary .tick").last(),
-    translateY = Number(lastTick.attr("transform").split(",")[1].slice(0, -1)); // drop Edit button to highest tick
-
-    plottingApp.main.select(".y.axis.primary").append("g")
-    .attr("class", "button y primary")
-    .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")")
-    .append("text")
-    .text("Edit")
-    .attr("dy", "0.32em")
-    .attr("cursor", "default")
-    .attr("fill", "currentColor")
-    .on("click", function(d, i) { return updateMainY(plottingApp.selectedSeries); });
-
-    // handle redraw reference y axis
-    if (plottingApp.ref_axis) {
-      plottingApp.ref_axis.remove();
-    }
-
-    // handle ref series
-    if (plottingApp.refSeries != "" && plottingApp.selectedSeries != plottingApp.refSeries) {
-      if (window.axisBounds[plottingApp.refSeries]) {
-        minMax = window.axisBounds[plottingApp.refSeries];
-      } else {
-        minMax = getMinMax(plottingApp.refSeries);
-        window.axisBounds[plottingApp.refSeries] = minMax;
-      }
-
-      plottingApp.secondary_yscale.domain(minMax);
-
-      plottingApp.ref_axis = plottingApp.main.append("g")
-      .attr("class", "y axis secondary")
-      .attr("transform", "translate(" + plottingApp.width + ",0)")
-      .call(plottingApp.refaxis)
-      .call(g => g.select(".domain").remove());
-
-      // add reference y axis label
-      axisBox = plottingApp.ref_axis.node().getBBox();
-      plottingApp.main.select(".y.axis.secondary").append("text")
-          .attr("class", "y label secondary")
-          .attr("text-anchor", "middle")
-          .attr("transform", "rotate(-90)")
-          .attr("y", 0 + axisBox.width + plottingApp.label_margin.large)
-          .attr("x", 0 - plottingApp.main_height / 2)
-          .attr("fill", "currentColor")
-          .text(plottingApp.refSeries);
-
-      // handle editable primary y axis
-      lastTick = plottingApp.main.selectAll(".y.axis.secondary .tick").last(),
-      translateY = lastTick.attr("transform").split(",")[1].slice(0, -1); // drop Edit button to highest tick
-
-      plottingApp.main.select(".y.axis.secondary").append("g")
-      .attr("class", "button y secondary")
-      .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")")
-      .append("text")
-      .text("Edit")
-      .attr("dy", "0.32em")
-      .attr("cursor", "default")
-      .attr("fill", "currentColor")
-      .on("click", function(d, i) { return updateMainY(plottingApp.refSeries); });
-    }
-  }
-
-  /* manually update main Y axis with user input */
-  function updateMainY(axis) {
-    $("#editAxis").show();
-    $(".navbar").css("opacity", "0.5");
-    $("#maindiv").css("opacity", "0.5");
-    
-    // handle dynamic data
-    window.editSeries = axis;
-    $("#updateEdit").click();
-  }
-
-  /* downsample datapoints using largest triangle three buckets algorithm */
-  function downsampleContext() {
-    // Downsample context data for big datasets
-    var sampler = largestTriangleThreeBucket();
-    
-    // Configure the x / y value accessors
-    sampler.x(function (d) { return d.x; })
-        .y(function (d) { return d.y; });
-
-    // Configure the size of the buckets used to downsample the data.
-    // Have at most 1000 context points
-    var bucket_size = Math.max(Math.round(plottingApp.data.length / 1000), 1);
-
-    // bump bucket size if 2 (doesn't preserve outliers)
-    // bucket_size = (bucket_size == 2) ? bucket_size + 1 : bucket_size;
-
-    sampler.bucketSize(bucket_size);
-    
-    plottingApp.context_data = sampler(plottingApp.data);
-  }
-
-  /* replot svg after changing series */
-  function replot() {
-    // Build quadtree for fast brushing
-    plottingApp.quadtree = d3.quadtree()
-              .x(function(d) { return d.time; })
-              .y(function(d) { return d.val; })
-              .addAll(plottingApp.data);
-    
-    downsampleContext();
-
-    updateYAxis();
-
-    plottingApp.context_plot.remove();
-    plottingApp.context_points.remove();
-
-    plotContext();
-    updateMain();
-    update_selection();
-  }
-
-  /* plot context graph line and create axis/brush if not created */
-  function plotContext() {
-    //context plot
-    plottingApp.context_plot = plottingApp.context.append("path")
-    .datum(plottingApp.context_data)
-    .attr("class", "line")
-    .attr("d", plottingApp.context_line);
-
-
-    plottingApp.context_points = plottingApp.context.selectAll(".point")
-    .data(plottingApp.context_data)
-    .enter().append("circle")
-    .attr("class", "point")
-    .attr("cx", function(d) { return plottingApp.context_xscale(d.time); })
-    .attr("cy", function(d) { return plottingApp.context_yscale(d.val); })
-    .attr("r", 2);
-
-    // create x axis and brush elm if doesn't exist (on first plot)
-    if (!plottingApp.conBrush) {
-      plottingApp.context.append("g")
-      .attr("transform", "translate(0," + plottingApp.context_height + ")")
-      .attr("class", "x axis")
-      .call(plottingApp.context_xaxis);
-
-
-      plottingApp.conBrush = plottingApp.context.append("g")
-      .attr("class", "context_brush")
-      .call(plottingApp.context_brush);
-    }
-  }
-
-  function createInView(domain) {
-    function inView(d) {
-      var dom = domain.map(function(d) { return plottingApp.context_xscale(d); });
-      return plottingApp.context_xscale(d.x) >= dom[0] && plottingApp.context_xscale(d.x) <= dom[1];
-    }
-    return inView;
-  }
-
-  /* redraw main graph with new points */
-  function updateMain() {
-    // subset to only data in current domain
-    var x_domain = plottingApp.main_xscale.domain();
-
-    var  main_data = plottingApp.data.filter(function(d){
-      return x_domain[0] <= d.time & d.time <= x_domain[1]
-    });
-
-    // handles ref series
-    var secondary_data = plottingApp.refSeries == "" || 
-      plottingApp.refSeries == plottingApp.selectedSeries ? null : plottingApp.allData
-        .filter(d => d.series == plottingApp.refSeries)
-        .filter(function(d) {
-          return x_domain[0] <= d.time & d.time <= x_domain[1]
-        });
-
-    var total_data = secondary_data == null ? main_data : [...main_data, ...secondary_data];
-
-    // redraw path
-    var path = plottingApp.main.selectAll("path");
-    path.remove();
-
-    // add primary series data line
-    plottingApp.main.append("path")
-      .datum(main_data)
-      .attr("class","line")
-      .attr("fill-opacity", "0.7")
-      .attr("d", plottingApp.main_line);
-
-    // redraw points
-    var point = plottingApp.main.selectAll("circle").data(total_data);
-    
-    point.attr("class", "update");
-
-    point.enter().append("circle")
-    .attr("class", "enter")
-    .attr("cx", function(d) { return plottingApp.main_xscale(d.time); })
-    .attr("cy", function(d) { return selectYScale(d); })
-    .attr("r", 5)
-    .classed("selected", function(d) { return d.selected; })
-    .merge(point)
-    .attr("class", "point")
-    .attr("cx", function(d) { return plottingApp.main_xscale(d.time); })
-    .attr("cy", function(d) { return selectYScale(d); })
-    .attr("r", 5)
-    .classed("selected", function(d) { return d.selected; });
-    
-    point.exit().remove();
-
-    // add secondary line and update secondary point styling if there is reference
-    if (secondary_data) {
-      plottingApp.main.append("path")
-        .datum(secondary_data)
-        .attr("class","line")
-        .attr("id", "secondary_line")
-        .attr("fill-opacity", "0.4")
-        .attr("d", plottingApp.secondary_line);
-
-      plottingApp.main.selectAll(".point")
-      .filter((d, i) => d.series == plottingApp.refSeries)
-      .attr("fill-opacity", "0.4")
-      .attr("r", 2)
-      .attr("pointer-events", "none");
-    }
-
-    /* add hover and click-label functionality for primary series points */
-    var timer;
-
-    plottingApp.main.selectAll(".point")
-    .filter((d, i) => d.series == plottingApp.selectedSeries)
-    .moveToFront()
-    .attr("fill-opacity", "0.7")
-    .on("click", function(point){
-        //allow clicking on single points
-        point.selected=1-point.selected;
-        update_selection();
-      })
-    .on("mouseover", function(point) {
-        timer = setTimeout(function() {
-          update_hoverinfo(point.actual_time, point.val, point.series);
-        }, 250);  
-      })
-    .on("mouseout", function() {
-        clearTimeout(timer);
-        update_hoverinfo("", "", "");
-    });
-
-    // update xAxis svg element
-    plottingApp.main.select(".x.axis").call(plottingApp.main_xaxis);
-  }
-
-  function update_hoverinfo(time, val, series) {
-    if (time === "" && val === "" && series == "") {
-      $("#hoverinfo").hide();
-      window.time = "";
-      window.val = "";
-      window.hoverSeries = "";
-      $("#updateHover").click();
-    } else {
-      $("#hoverinfo").show();
-      window.time = time.toString();
-      window.val = val.toFixed(2);
-      window.hoverSeries = series.toString();
-      $("#updateHover").click();
-
-      // fix autosizing selector width
-      $("#selector").width(selectorWidth);
-    }
-  }
-  
-  // plot graph
-  function plotMain() {
-    // main plot
-    plottingApp.mainBrush = plottingApp.main.append("g")
-    .attr("class", "main_brush")
-    .call(plottingApp.main_brush);
-    
-    plottingApp.main.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + plottingApp.main_height + ")")
-    .call(plottingApp.main_xaxis);
-
-    updateMain();
-    plotContext();
-
-    // store the reference to the original handler
-    var oldMousedown = plottingApp.conBrush.on("mousedown.brush");
-
-    // and replace it with our custom handler
-    plottingApp.conBrush.on("mousedown.brush", function () {
-        plottingApp.conBrush.on("mouseup.brush", function () {
-            clearHandlers();
-        });
-
-        plottingApp.conBrush.on("mousemove.brush", function () {
-            clearHandlers();
-            oldMousedown.call(this);
-            // conBrush.on('mousemove.brush').call(this);
-        });
-
-        function clearHandlers() {
-            plottingApp.conBrush.on("mousemove.brush", null);
-            plottingApp.conBrush.on("mouseup.brush", null);
-        }
-    });
-  }
-
-  function limitContext() {
-    var s = d3.brushSelection(plottingApp.conBrush.node()).map(plottingApp.context_xscale.invert, plottingApp.context_xscale);
-    var brushData = plottingApp.data.filter(createInView(s));
-    if (brushData.length >= 2000) {
-      var firstIndex = plottingApp.data.map(function(d) { return d.time; }).indexOf(s[0]);
-    }
-  }
-
-  function brushedContext() {
-    var s = d3.brushSelection(plottingApp.conBrush.node()) || plottingApp.context_xscale.range();
-    plottingApp.main_xscale.domain(s.map(plottingApp.context_xscale.invert, plottingApp.context_xscale));
-
-    updateMain();
-
-    
-    var limits = plottingApp.context_xscale.domain();
-    if (plottingApp.context_brush.extent()[1] >= 1 * plottingApp.context_xscale.domain()[1]) {
-      console.log("far right");
-    }
-  }
-
-  //keyboard functions to change the focus
-  function transform_context(shift,scale) {
-    var currentExtent = d3.brushSelection(plottingApp.conBrush.node());
-    currentExtent = currentExtent.map(function(d) {
-      return plottingApp.context_xscale.invert(d);
-    });
-
-
-    var offset0 = ((1 - Math.pow(1.1,scale)) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
-    var offset1 = ((Math.pow(1.1,scale) - 1) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
-
-    // don't shift past the ends of the scale
-    var limits = plottingApp.context_xscale.domain();
-
-    // if we go off the left edge, don't allow us to move left
-    if ((1*currentExtent[0])+offset0<limits[0]) {
-      shift = 0;
-      offset0 = limits[0] - currentExtent[0];
-      offset1 = offset0 + ((Math.pow(1.1,scale) - 1) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
-    }
-
-    // if we go off the right edge, don't allow us to move right
-    if ((1*currentExtent[1])+offset1>limits[1]) {
-      shift = 0;
-      offset1 = limits[1] - currentExtent[1];
-      offset0 = offset1 + ((1 - Math.pow(1.1,scale)) + 0.1 * shift) * (currentExtent[1] - currentExtent[0]);
-
-    }
-
-    // double check that the last bit didn't push us too far left
-    if ((1 * currentExtent[0]) + offset0 < limits[0]) {
-      shift = 0;
-      offset0 = limits[0] - currentExtent[0];
-    }
-
-
-    // do shift and update brushing
-    var newExtent = [(1 * currentExtent[0]) + offset0,(1 * currentExtent[1]) + offset1];
-
-    plottingApp.conBrush.call(plottingApp.context_brush.move, 
-      newExtent.map(function(d) { return plottingApp.context_xscale(d); }));
-
-  }
-  
-  // Find the nodes within the specified rectangle.
-  function search(quadtree, brush_xmin, brush_ymin, brush_xmax, brush_ymax) {
-    // use quadtree to brush points in defined rectangle
-    plottingApp.quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
-      if (!node.length) {
-        do {
-          var d = node.data;
-          // change selected property of points in brush
-          if (!plottingApp.shiftKey) {
-            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
-          } else {
-            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
-          }
-          
-        } while (node = node.next);
-      }
-      
-      // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
-      return quad_xmin >= brush_xmax || quad_ymin >= brush_ymax || quad_xmax < brush_xmin || quad_ymax < brush_ymin;
-    });
-  }
-
-  function update_selection() {
-    plottingApp.main.selectAll(".point").classed("selected", function(d) { return d.selected; });
-    plottingApp.context.selectAll(".point").classed("selected", function(d) { return d.selected; });
-  }
-
-  function brushedMain() {
-    var extent = d3.brushSelection(plottingApp.mainBrush.node());
-    if (extent === null) {
-      return;
-    }
-    
-    // convert pixels defining brush into actual time, value scales
-    var xmin = plottingApp.main_xscale.invert(extent[0][0]),
-    xmax = plottingApp.main_xscale.invert(extent[1][0]),
-    ymax = plottingApp.main_yscale.invert(extent[0][1]),
-    ymin = plottingApp.main_yscale.invert(extent[1][1]);
-    
-    search(plottingApp.quadtree, xmin, ymin, xmax, ymax);
-    update_selection();
-    plottingApp.mainBrush.call(plottingApp.main_brush.move, null);
   }
 
   $("#seriesSelect").change(function() {
