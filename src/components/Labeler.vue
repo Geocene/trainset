@@ -597,6 +597,7 @@ function labeller () {
     .filter((d, i) => d.series == plottingApp.selectedSeries)
     .moveToFront()
     .attr("fill-opacity", "0.7")
+    .attr("pointer-events", "all")
     .on("click", function(point){
           //allow clicking on single points
           point.selected=1-point.selected;
@@ -780,9 +781,11 @@ function labeller () {
     } else {
       plottingApp.main.selectAll(".point")
       .on("mouseover", function(e) {
+        alert('caught mouseover');
         e.preventDefault();
       })
       .on("mouseout", function(e) {
+        alert('caught mouseout')
         e.preventDefault();
       });
     }
