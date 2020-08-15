@@ -68,7 +68,7 @@ export default {
       var filename = fileInput.name.split('.csv')[0];
       var id = 0;
       var reader = new FileReader();
-      var seriesList = new Set(), plotDict = [], headerStr;
+      var seriesList = new Set(), labelList = new Set(), plotDict = [], headerStr;
       reader.readAsBinaryString(fileInput);
       reader.onloadend = () => {
         fileText = $.csv.toArrays(reader.result);
@@ -77,17 +77,20 @@ export default {
           if (fileText[i].length === 4 
             && fileText[i][1].match(/^((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
             && fileText[i][2].match(/^-?\d+(.\d+)?$/)
-            && fileText[i][3].match(/^1|0$/)
+            && fileText[i][3].match(/^[a-zA-Z0-9_-]{0,16}$/)
             /* && fileText[i][0].includes(filename) */) {
             var date = DateTime.fromISO(fileText[i][1], {setZone: true});
             var series = fileText[i][0];
             seriesList.add(series);
+            if (fileText[i][3]) {
+              labelList.add(fileText[i][3]);
+            }
             plotDict.push({
               'id': id.toString(),
               'val': Number(fileText[i][2]).toString(),
               'time': date,
               'series': series,
-              'selected': Number(fileText[i][3]).toString()
+              'label': fileText[i][3]
             });
             id++;
           } else {
@@ -95,8 +98,8 @@ export default {
               console.log('line parse error');
             } else if (!fileText[i][2].match(/-?\d+(.\d+)?$/)) {
               console.log('val parse error');
-            } else if (!fileText[i][3].match(/1|0$/)) {
-              console.log('selected parse error');
+            } else if (!fileText[i][3].match(/^[a-zA-Z0-9_-]{0,16}$/)) {
+              console.log('label parse error');
             } else {
               console.log('date parse error');
             }
@@ -106,6 +109,7 @@ export default {
         }
 
         seriesList = Array.from(seriesList);
+        labelList = Array.from(labelList);
 
         this.$router.push({
           name: 'labeler',
@@ -114,6 +118,7 @@ export default {
             filename: filename,
             headerStr: headerStr,
             seriesList: seriesList,
+            labelList: labelList,
             isValid: true
           }
         });

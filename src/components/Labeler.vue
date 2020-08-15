@@ -15,7 +15,19 @@
 
     <div id="hoverbox">
       <div id="selector">
-        <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
+        <div id="labelSelector">
+          <button type="button" class="close" style="margin-right: 5px; float: left;">
+            <span>&plus;</span>
+          </button>
+          <select id="labelSelect">
+          </select>
+          <button type="button" class="close" style="margin-left: 5px;">
+            <span>&times;</span>
+          </button>
+        </div>
+        <div id="seriesSelector" style="float: right;">
+          <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
+        </div>
       </div>
       <div id="hoverinfo" class="card">
         <div class="card-subtitle">Time: {{ time }}</div>
@@ -114,6 +126,7 @@ export default {
     filename: String,
     headerStr: String,
     seriesList: Array,
+    labelList: Array,
     isValid: Boolean
   },
   data: function() {
@@ -218,11 +231,24 @@ export default {
     },
     // build series selector using seriesList
     handleSelector() {
-      var select = document.getElementById("seriesSelect");
+      // populate series selector
       $.each(plottingApp.seriesList, function(i, p) {
         $("#seriesSelect").append($("<option></option>").val(p).html(p));
       });
-      window.selectorWidth = $("#selector").width();
+      // if theres only one series, omit selector
+      if (plottingApp.seriesList.length == 1) {
+        $("#seriesSelector").hide();
+        $("#labelSelector").css("margin-right", "0px");
+      }
+      // if there no labels, use label_1
+      if (plottingApp.labelList.length == 0) {
+        plottingApp.labelList.push("label_1");
+      }
+      // populate label selector
+      $.each(plottingApp.labelList, function(i, p) {
+        $("#labelSelect").append($("<option></option>").val(p).html(p));
+      });
+      plottingApp.selectedLabel = $("#labelSelect option:selected").val();
     }
   },
   mounted() {
@@ -231,23 +257,19 @@ export default {
         plottingApp.filename = this.filename;
         plottingApp.csvData = this.csvData;
         plottingApp.seriesList = this.seriesList;
+        plottingApp.labelList = this.labelList;
         $("#maindiv").append("<div class=\"loader\"></div>");
         $("#maindiv").css("padding", "0% 5.2%");
 
-        // populate selector & fix selector width
+        // populate selectors
         this.handleSelector();
 
-        if (plottingApp.seriesList.length == 1) {
-          $("#selector").hide();
-        }
+        $("#hoverinfo").hide();
 
         // global axis bounds dict
         window.axisBounds = {};
 
-        $("#hoverinfo").hide();
-        
         labeler();
-
       } else {
         this.uploadFailed();
       }
@@ -471,7 +493,7 @@ function labeler () {
     .attr("cx", function(d) { return plottingApp.context_xscale(d.time); })
     .attr("cy", function(d) { return plottingApp.context_yscale(d.val); })
     .attr("r", 2)
-    .classed("selected", function(d) { return d.selected; });
+    .classed("selected", function(d) { return isSelected(d); });
   }
 
   /* update yaxes bounds based on selected and reference series */
@@ -610,7 +632,7 @@ function labeler () {
     .attr("cx", function(d) { return plottingApp.main_xscale(d.time); })
     .attr("cy", function(d) { return selectYScale(d); })
     .attr("r", 5)
-    .classed("selected", function(d) { return d.selected; });
+    .classed("selected", function(d) { return isSelected(d); });
 
     // add secondary line and update secondary point styling if there is reference
     if (secondary_data) {
@@ -853,9 +875,6 @@ function labeler () {
       window.val = val.toFixed(2);
       window.hoverSeries = series.toString();
       $("#updateHover").click();
-
-      // fix autosizing selector width
-      $("#selector").width(selectorWidth);
     }
   }
 
@@ -866,7 +885,7 @@ function labeler () {
     d.time = DateTime.fromISO(d2);;
     d.val = +d.val;
     d.series = d.series;
-    d.selected = +d.selected;
+    d.label = d.label;
     d.x = +d.time;
     d.y = d.val;
     return d;
@@ -892,8 +911,8 @@ function labeler () {
   }
 
   function updateSelection() {
-    plottingApp.main.selectAll(".point").classed("selected", function(d) { return d.selected; });
-    plottingApp.context.selectAll(".point").classed("selected", function(d) { return d.selected; });
+    plottingApp.main.selectAll(".point").classed("selected", function(d) { return isSelected(d); });
+    plottingApp.context.selectAll(".point").classed("selected", function(d) { return isSelected(d); });
   }
 
   /* calculate default extent based on data length */
@@ -910,6 +929,14 @@ function labeler () {
       end_date = plottingApp.data[Math.round((d_len - 1) / 10)].time;
     }
     return [start_date, end_date]
+  }
+
+  /* */
+  function isSelected(d) {
+    if (d.label == '') {
+      return false
+    }
+    return true
   }
 
   /* set reference series on checkbox change
@@ -965,6 +992,11 @@ function labeler () {
     replot();
   });
 
+  $("#labelSelect").change(function() {
+    plottingApp.selectedLabel = $("#labelSelect option:selected").val();
+    alert(plottingApp.selectedLabel);
+  });
+
   $("#clearSeries").click(function() {
     plottingApp.quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
@@ -987,7 +1019,7 @@ function labeler () {
     plottingApp.allData.forEach(function(dataArray){
       var date = dataArray.actual_time.toISO();
       let row = dataArray.series + "," + date
-                + "," + dataArray.val + "," + dataArray.selected;
+                + "," + dataArray.val + "," + dataArray.label;
       csvContent += row + "\n";
     });
     var saveData = (function () {
@@ -1053,9 +1085,6 @@ function labeler () {
       plottingApp.shiftKey = false;
     }
   });
-
-  return this;
-
 }
 </script>
 
@@ -1076,12 +1105,12 @@ svg {
 #hoverbox {
   position: absolute;
   float: right;
-  margin-left: 70%;
+  right: 20%;
 }
 
 #hoverinfo {
   position: absolute;
-  margin-left: 130px;
+  margin-left: 100%;
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
@@ -1095,6 +1124,11 @@ svg {
   text-align: left;
   padding: 10px;
   padding-top: 0px;
+}
+
+#labelSelector {
+  float: left;
+  margin-right: 20px;
 }
 
 #ref_selector {
