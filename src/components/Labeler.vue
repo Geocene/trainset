@@ -382,7 +382,7 @@ function labeler () {
     // get default focus
     var defaultExtent = getDefaultExtent();
     // set scales based on loaded data, default focus
-    plottingApp.context_xscale.domain(pad_extent(d3.extent(
+    plottingApp.context_xscale.domain(padExtent(d3.extent(
       plottingApp.allData.map(function(d) { return d.time; })))); // xaxis set according to allData
     
     defaultExtent[0] = plottingApp.context_xscale.domain()[0];
@@ -486,7 +486,7 @@ function labeler () {
     }
 
     plottingApp.main_yscale.domain(minMax);
-    plottingApp.context_yscale.domain(pad_extent(getMinMax(plottingApp.selectedSeries)));
+    plottingApp.context_yscale.domain(padExtent(getMinMax(plottingApp.selectedSeries)));
 
     // redraw / draw primary y axis
     if (plottingApp.plot.y_axis) {
@@ -641,7 +641,7 @@ function labeler () {
     .on("click", function(point){
           //allow clicking on single points
           point.selected=1-point.selected;
-          update_selection();
+          updateSelection();
         });
 
     toggleHoverinfo(true);
@@ -656,7 +656,7 @@ function labeler () {
     updateYAxis();
     plotContext();
     updateMain();
-    update_selection();
+    updateSelection();
   }
 
   /* downsample context points using largest triangle three buckets algorithm
@@ -708,7 +708,7 @@ function labeler () {
     ymin = plottingApp.main_yscale.invert(extent[1][1]);
     
     search(plottingApp.quadtree, xmin, ymin, xmax, ymax);
-    update_selection();
+    updateSelection();
     plottingApp.plot.main_brush.call(plottingApp.main_brush.move, null);
   }
 
@@ -734,7 +734,7 @@ function labeler () {
   }
 
   //keyboard functions to change the focus
-  function transform_context(shift,scale) {
+  function transformContext(shift,scale) {
     var currentExtent = d3.brushSelection(plottingApp.plot.context_brush.node());
     currentExtent = currentExtent.map(function(d) {
       return plottingApp.context_xscale.invert(d);
@@ -812,19 +812,19 @@ function labeler () {
       plottingApp.main.selectAll(".point")
       .on("mouseover", function(point) {
           plottingApp.hoverTimer = setTimeout(function() {
-            update_hoverinfo(point.actual_time, point.val, point.series);
+            updateHoverinfo(point.actual_time, point.val, point.series);
           }, 250);  
         })
       .on("mouseout", function() {
           clearTimeout(plottingApp.hoverTimer);
           plottingApp.hoverTimer = null;
-          update_hoverinfo("", "", "");
+          updateHoverinfo("", "", "");
       });
     } else {
       // clear hoverinfo and timeout
       if (plottingApp.hoverTimer) {
         clearTimeout(plottingApp.hoverTimer);
-        update_hoverinfo("", "", "");
+        updateHoverinfo("", "", "");
       }
       
       // replace handler
@@ -840,7 +840,7 @@ function labeler () {
   }
 
   /* update hoverbox info with point data */
-  function update_hoverinfo(time, val, series) {
+  function updateHoverinfo(time, val, series) {
     if (time === "" && val === "" && series == "") {
       $("#hoverinfo").hide();
       window.time = "";
@@ -859,6 +859,19 @@ function labeler () {
     }
   }
 
+  /* format csv data with data structure */ 
+  function type(d) {
+    d.actual_time = DateTime.fromISO(d.time, {setZone: true});
+    var d2 = d.time.toISO({ includeOffset: false });
+    d.time = DateTime.fromISO(d2);;
+    d.val = +d.val;
+    d.series = d.series;
+    d.selected = +d.selected;
+    d.x = +d.time;
+    d.y = d.val;
+    return d;
+  }
+
   /* format luxon datetime obj to hoverbox time */
   function formatHover(datetime) {
     var hoverdate = datetime.toISO();
@@ -873,16 +886,12 @@ function labeler () {
   
   /* manually update main Y axis with user input */
   function updateMainY(axis) {
-    // $("#editAxis").show();
-    // $(".navbar").css("opacity", "0.5");
-    // $("#maindiv").css("opacity", "0.5");
-    
     // handle dynamic data
     window.editSeries = axis;
     $("#updateEdit").click();
   }
 
-  function update_selection() {
+  function updateSelection() {
     plottingApp.main.selectAll(".point").classed("selected", function(d) { return d.selected; });
     plottingApp.context.selectAll(".point").classed("selected", function(d) { return d.selected; });
   }
@@ -925,34 +934,20 @@ function labeler () {
       return plottingApp.secondary_yscale(d.val);
     }
   } 
-  
-  /* format csv data with data structure */ 
-  function type(d) {
-    d.actual_time = DateTime.fromISO(d.time, {setZone: true});
-    var d2 = d.time.toISO({ includeOffset: false });
-    d.time = DateTime.fromISO(d2);;
-    d.val = +d.val;
-    d.series = d.series;
-    d.selected = +d.selected;
-    d.x = +d.time;
-    d.y = d.val;
-    return d;
-  }
 
   /* increase extent by padding */
-  function pad_extent(extent, padding) {
+  function padExtent(extent, padding) {
     padding = (typeof padding === "undefined") ? 0.01 : padding;
     var range = extent[1]-extent[0];
     // 1*x is quick hack to handle date/time axes
     return [(1 * extent[0]) - padding * range, (1 * extent[1]) + padding * range].map(d => d.toFixed(3));
-
   }
 
   /* return the bounds of the given y axis */
   function getMinMax(axis) {
     var y_vals = plottingApp.allData.filter(d => d.series == axis).map(d => d.val),
     minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
-    return pad_extent(minMax, 0.1);
+    return padExtent(minMax, 0.1);
   }
 
   $("#seriesSelect").change(function() {
@@ -979,7 +974,7 @@ function labeler () {
       }
       return false;
     });
-    update_selection();
+    updateSelection();
   });
 
   $("#triggerReplot").click(function() {
@@ -1027,25 +1022,25 @@ function labeler () {
     var code = d3.event.keyCode;
     if (code == 38) {
       // handle up arrowkey
-      transform_context(0, -2);
+      transformContext(0, -2);
       d3.event.preventDefault();
     } else if (code == 40) {
       // handle down arrowkey
-      transform_context(0, 2);
+      transformContext(0, 2);
       d3.event.preventDefault();
     } else if (code === 37) {
       // handle left arrowkey
       if (plottingApp.shiftKey) {
-        transform_context(-9, 0);
+        transformContext(-9, 0);
       } else {
-        transform_context(-1, 0);
+        transformContext(-1, 0);
       }
     } else if (code === 39) {
       // handle right arrowkey
       if (plottingApp.shiftKey) {
-        transform_context(9, 0);
+        transformContext(9, 0);
       } else {
-        transform_context(1, 0);
+        transformContext(1, 0);
       }
     }
   });
@@ -1188,8 +1183,6 @@ svg {
 #chartTitle {
   color: #000000;
 }
-
-
 
 .bounds {
   width: 40%;
