@@ -1,16 +1,18 @@
 <template>
   <div class="container-fluid" id="plotBox">
+
     <nav class="navbar navbar-expand fixed-top"> 
       <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
       <ul class="navbar-nav ml-auto">
         <div class="nav-link" @click="newHelp()">Help</div>
         <div class="nav-link" @click="newLicense()">License</div>
         <li class="nav-item">
-          <div class="nav-link" id="clear">Clear</div>
+          <div class="nav-link" id="clear" @click="openClearModal()">Clear</div>
         </li>
-        <div class="nav-link" id="export">Export</div>
+        <div class="nav-link" id="export" @click="openExportModal()">Export</div>
       </ul>
     </nav>
+
     <div id="hoverbox">
       <div id="selector">
         <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
@@ -40,39 +42,32 @@
         </div>
       </div>
     </div>
-    <div class="modalBox" id="error" style="display: none;">
-      <h5 class="modalInfo">Upload Failed</h5>
-      <hr>
-      <div class="modalInfo modalMsg">Make sure data is in the TRAINSET format. See help.</div>
-      <button type="button" class="btn btn-light" id="errorOk" @click="goHome()">Ok</button>
-    </div>
-    <div class="modalBox" id="editAxis" style="display: none;">
-      <h5 class="modalInfo">Edit Axis Bounds</h5>
-      <hr>
-      <div class="modalInfo modalMsg">
-        <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
-        - 
-        <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
-      </div>
-      <button type="button" class="btn btn-light clearbtn" id="cancel" @click="cancelEdit()">Cancel</button>
-      <button type="button" class="btn btn-light clearbtn" id="okEdit">Ok</button>
-    </div>
-    <div class="modalBox" id="clearOk" style="display: none;">
-      <h5 class="modalInfo">Clear all labels?</h5>
-      <hr>
-      <div class="modalInfo modalMsg">All labels from this set will be erased. This cannot be undone</div>
-      <button type="button" class="btn btn-light clearbtn" id="cancel" @click="cancelClear()">Cancel</button>
-      <button type="button" class="btn btn-light clearbtn" id="okClear">Ok</button>
-    </div>
-    <div class="modalBox" id="exportComplete" style="display: none;">
-      <h5 class="modalInfo">Export complete</h5>
-      <hr>
-      <div class="modalInfo modalMsg">Upload new data set or continue labeling this one?</div>
-      <button type="button" class="btn btn-light exportBtn" id="continue" @click="cancelUpload()">Continue</button>
-      <button type="button" class="btn btn-light exportBtn" id="newUpload" @click="newUpload()">Upload</button>
-    </div>
+
+    <DialogModal id="modal" ref="modalComponent" @clicked-ok="modalOk" :modalName="modal.name" :modalHeader="modal.header">
+      <template v-slot:content>
+        <template v-if="modal.name == 'edit'">
+          <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
+          - 
+          <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
+        </template>
+        <template v-else-if="modal.name == 'clear'">
+          All labels from this set will be erased. This cannot be undone.
+        </template>
+        <template v-else-if="modal.name == 'failed'">
+          Make sure data is in the TRAINSET format. See help.
+        </template>
+        <template v-else-if="modal.name == 'export'">
+          Upload new data set or continue labeling this one?
+        </template>
+      </template>
+    </DialogModal>
+
+    <!-- invisible buttons to get from vue scope to labeler() -->
     <button id="updateHover" style="display: none;" v-on:click="updateHoverinfo"></button>
-    <button id="updateEdit" style="display: none;" v-on:click="updateEditinfo"></button>
+    <button id="updateEdit" style="display: none;" v-on:click="openEditModal"></button>
+    <button id="triggerReplot" style="display: none;"></button>
+    <button id="clearSeries" style="display: none;"></button>
+
   </div>
 </template>
 
@@ -80,6 +75,7 @@
 import * as d3 from "d3"
 import * as dc from "dc"
 import { largestTriangleThreeBucket } from "d3fc-sample";
+import DialogModal from "./Modal";
 const { DateTime } = require("luxon");
 
 d3.selection.prototype.moveToFront = function() {
@@ -110,6 +106,9 @@ var plottingApp = {};
 
 export default {
   name: "labeler",
+  components: {
+    DialogModal
+  },
   props: {
     csvData: Array,
     filename: String,
@@ -122,69 +121,110 @@ export default {
       val: "",
       time: "",
       hoverSeries: "",
-      axisBounds: []
+      axisBounds: [],
+      modal: {
+        name: "",
+        header: "",
+        message: ""
+      }
     };
   },
-    methods: {
-      // return to Index.vue
-      goHome() {
-        this.$router.push({ name: "home", params: {nextUp: false} });
-      },
-      // return to Index.vue and trigger file upload selection
-      newUpload() {
-        this.$router.push({ name: "home", params: {nextUp: true} });
-      },
-      // open Help.vue in new window
-      newHelp() {
-        let routeData = this.$router.resolve({ name: "help" });
-        window.open(routeData.href, "_blank");
-      },
-      // open License.vue in new window
-      newLicense() {
-        let routeData = this.$router.resolve({ name: "license" });
-        window.open(routeData.href, "_blank");
-      },
-      // open Index.vue in new window
-      newHome() {
-        let routeData = this.$router.resolve({ name: "home", params: {nextUp: false} });
-        window.open(routeData.href, "_blank");
-      },
-      // update #hoverinfo data
-      updateHoverinfo() {
-        this.time = window.time;
-        this.val = window.val;
-        this.hoverSeries = window.hoverSeries;
-      },
-      // update #editAxis info
-      updateEditinfo() {
-        this.axisBounds = window.axisBounds[window.editSeries];
-      },
-      // cancel clear all series labels
-      cancelClear() {
-        $("#clearOk").hide();
-        $(".navbar").css("opacity", "1");
-        $("#maindiv").css("opacity", "1");
-      },
-      cancelEdit() {
-        $("#editAxis").hide();
-        $(".navbar").css("opacity", "1");
-        $("#maindiv").css("opacity", "1");
-      },
-      // hide export modal and continue labeling
-      cancelUpload() {
-        $("#exportComplete").hide();
-        $(".navbar").css("opacity", "1");
-        $("#maindiv").css("opacity", "1");
-      },
-      // build series selector using seriesList
-      handleSelector() {
-        var select = document.getElementById("seriesSelect");
-        $.each(plottingApp.seriesList, function(i, p) {
-          $("#seriesSelect").append($("<option></option>").val(p).html(p));
-        });
-        window.selectorWidth = $("#selector").width();
+  methods: {
+    // return to Index.vue
+    goHome() {
+      this.$router.push({ name: "home", params: {nextUp: false} });
+    },
+    // return to Index.vue and trigger file upload selection
+    newUpload() {
+      this.$router.push({ name: "home", params: {nextUp: true} });
+    },
+    // open Help.vue in new window
+    newHelp() {
+      let routeData = this.$router.resolve({ name: "help" });
+      window.open(routeData.href, "_blank");
+    },
+    // open License.vue in new window
+    newLicense() {
+      let routeData = this.$router.resolve({ name: "license" });
+      window.open(routeData.href, "_blank");
+    },
+    // open Index.vue in new window
+    newHome() {
+      let routeData = this.$router.resolve({ name: "home", params: {nextUp: false} });
+      window.open(routeData.href, "_blank");
+    },
+    // update #hoverinfo data
+    updateHoverinfo() {
+      this.time = window.time;
+      this.val = window.val;
+      this.hoverSeries = window.hoverSeries;
+    },
+    // update #editAxis info
+    updateEditinfo() {
+      this.axisBounds = window.axisBounds[window.editSeries];
+    },
+    // open clear modal
+    openClearModal() {
+      this.modal.name = "clear";
+      this.modal.header = "Clear all labels?";
+      this.$refs.modalComponent.show();
+    },
+    // open edit modal
+    openEditModal() {
+      this.axisBounds = window.axisBounds[window.editSeries];
+      this.modal.name = "edit";
+      this.modal.header = "Edit Axis Bounds";
+      this.$refs.modalComponent.show();
+    },
+    // open export modal
+    openExportModal() {
+      this.modal.name = "export";
+      this.modal.header = "Export complete";
+      this.$refs.modalComponent.show();
+    },
+    // handle upload failed modal
+    uploadFailed() {
+      $("#clear").hide();
+      $("#export").hide();
+      $("#hoverbox").hide();
+      this.modal.name = "failed";
+      this.modal.header = "Upload Failed";
+      this.$refs.modalComponent.show();
+    },
+    // validate axis bounds
+    invalidBounds(bounds) {
+      var invalid = false;
+      if (isNaN(bounds[0]) || isNaN(bounds[1]) || (bounds[0] == bounds[1])) {
+        invalid = true;
+      }
+      return invalid;
+    },
+    // handle modal ok click
+    modalOk(modal_name) {
+      if (modal_name == "edit") {
+        // check validity of axisBounds
+        if (this.invalidBounds(this.axisBounds)) {
+          alert("invalid");
+        } else {
+          $("#triggerReplot").click();
+        }
+      } else if (modal_name == "clear") {
+        $("#clearSeries").click();
+      } else if (modal_name == "export") {
+        this.newUpload();
+      } else if (modal_name == "failed") {
+        this.goHome();
       }
     },
+    // build series selector using seriesList
+    handleSelector() {
+      var select = document.getElementById("seriesSelect");
+      $.each(plottingApp.seriesList, function(i, p) {
+        $("#seriesSelect").append($("<option></option>").val(p).html(p));
+      });
+      window.selectorWidth = $("#selector").width();
+    }
+  },
   mounted() {
       if (this.isValid) {
         plottingApp.headerStr = this.headerStr;
@@ -205,21 +245,16 @@ export default {
         window.axisBounds = {};
 
         $("#hoverinfo").hide();
-        labeller();
-        // this.newlabeller();
+        
+        labeler();
 
       } else {
-        $("#clear").hide();
-        $("#export").hide();
-        $(".navbar").css("opacity", "0.5");
-        $("#error").show();
-        $("#hoverbox").hide();
+        this.uploadFailed();
       }
   }
 }
 
-function labeller () {
-
+function labeler () {
   // main -- main plot
   // context -- smaller context plot for zooming, scrolling
 
@@ -406,7 +441,6 @@ function labeller () {
         plottingApp.plot.context_brush.on("mousemove.brush", function () {
             clearHandlers();
             oldMousedown.call(this);
-            // plottingApp.plot.context_brush.on('mousemove.brush').call(this);
         });
 
         function clearHandlers() {
@@ -815,7 +849,7 @@ function labeller () {
       $("#updateHover").click();
     } else {
       $("#hoverinfo").show();
-      window.time = time.toString();
+      window.time = formatHover(time);
       window.val = val.toFixed(2);
       window.hoverSeries = series.toString();
       $("#updateHover").click();
@@ -824,12 +858,24 @@ function labeller () {
       $("#selector").width(selectorWidth);
     }
   }
+
+  /* format luxon datetime obj to hoverbox time */
+  function formatHover(datetime) {
+    var hoverdate = datetime.toISO();
+    hoverdate = hoverdate.match(/(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+)([+-][0-2]\d:[0-5]\d|Z)/);
+    var dateArr = hoverdate[1].split(".");
+    if (dateArr[1] == "000") {
+      return dateArr[0]
+    } else {
+      return hoverdate
+    }
+  }
   
   /* manually update main Y axis with user input */
   function updateMainY(axis) {
-    $("#editAxis").show();
-    $(".navbar").css("opacity", "0.5");
-    $("#maindiv").css("opacity", "0.5");
+    // $("#editAxis").show();
+    // $(".navbar").css("opacity", "0.5");
+    // $("#maindiv").css("opacity", "0.5");
     
     // handle dynamic data
     window.editSeries = axis;
@@ -921,22 +967,10 @@ function labeller () {
         document.getElementById("ref_selector").disabled = false;
       }
     }
-
     replot();
-
-
   });
 
-  $("#clear").click(function() {
-    $("#clearOk").show();
-    $(".navbar").css("opacity", "0.5");
-    $("#maindiv").css("opacity", "0.5");
-  });
-
-  $("#okClear").click(function() {
-    $("#clearOk").hide();
-    $(".navbar").css("opacity", "1");
-    $("#maindiv").css("opacity", "1");
+  $("#clearSeries").click(function() {
     plottingApp.quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
         do {
@@ -948,12 +982,7 @@ function labeller () {
     update_selection();
   });
 
-  $("#okEdit").click(function() {
-    $("#editAxis").hide();
-    $(".navbar").css("opacity", "1");
-    $("#maindiv").css("opacity", "1");
-
-    // update specified Y axis with specified bounds
+  $("#triggerReplot").click(function() {
     replot();
    });
 
@@ -986,8 +1015,6 @@ function labeller () {
     }
     saveData(csvContent, filename + ".csv");
     $("#exportComplete").show();
-    $(".navbar").css("opacity", "0.5");
-    $("#maindiv").css("opacity", "0.5");
   });
 
   d3.select(window).on("keydown", function(e) {
@@ -1032,6 +1059,8 @@ function labeller () {
     }
   });
 
+  return this;
+
 }
 </script>
 
@@ -1052,20 +1081,25 @@ svg {
 #hoverbox {
   position: absolute;
   float: right;
-  margin-left: 76%;
+  margin-left: 70%;
 }
 
 #hoverinfo {
+  position: absolute;
+  margin-left: 130px;
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
+  width: 260px;
 }
 
 #selector {
+  float: left;
   position: relative;
   margin-bottom: 10px;
   text-align: left;
   padding: 10px;
+  padding-top: 0px;
 }
 
 #ref_selector {
@@ -1155,6 +1189,13 @@ svg {
   color: #000000;
 }
 
+
+
+.bounds {
+  width: 40%;
+}
+
+/*
 .modalBox {
   padding: 5px 15px;
   border-radius: 15px;
@@ -1163,10 +1204,6 @@ svg {
   position: fixed;
   top: 30%;
   left: 42%;
-}
-
-.bounds {
-  width: 40%;
 }
 
 #exportComplete {
@@ -1196,6 +1233,7 @@ svg {
   margin: 10px 5px;
   padding: 6px 15px;
 }
+*/
 
 hr {
   background: #f4f4f4;
