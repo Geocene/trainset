@@ -134,7 +134,7 @@ export default {
 .modalTitle {
   text-align: center;
   color: #F4F4F4;
-  padding: 10px 15px;
+  padding: 15px 15px 10px;
 }
 
 .modalContent {
