@@ -21,6 +21,10 @@ require('bootstrap/dist/css/bootstrap.min.css');
 Vue.use(VueRouter)
 Vue.use(VModal)
 
+Vue.directive('visible', (el, binding) => {
+    el.style.visibility = !!binding.value ? 'visible' : 'hidden'
+});
+
 const routes = [
 	{ name: 'home', path: '/', component: Index, props: true },
 	{ name: 'help', path: '/help', component: Help },

@@ -16,12 +16,15 @@
     <div id="hoverbox">
       <div id="selector">
         <div id="labelSelector">
-          <button type="button" class="close" style="margin-right: 5px; float: left;">
+          <button type="button" class="close" style="margin-right: 5px; float: left;" @click="openAddLabelModal()">
             <span>&plus;</span>
           </button>
-          <select id="labelSelect">
+          <select id="labelSelect" v-model="selectedLabel" :required="true" @change="updateSelectedLabel">
+            <option v-for="label in optionsList" :key="label" :name="label">
+              {{ label }}
+            </option>
           </select>
-          <button type="button" class="close" style="margin-left: 5px;">
+          <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="openDeleteLabelModal()">
             <span>&times;</span>
           </button>
         </div>
@@ -70,6 +73,12 @@
         </template>
         <template v-else-if="modal.name == 'export'">
           Upload new data set or continue labeling this one?
+        </template>
+        <template v-else-if="modal.name == 'delete'">
+          Are you sure you want to delete label: {{ selectedLabel }}
+        </template>
+        <template v-else-if="modal.name == 'add'">
+          <input type="text" id="inputLabel" v-model="inputLabel"/> 
         </template>
       </template>
     </DialogModal>
@@ -134,13 +143,28 @@ export default {
       val: "",
       time: "",
       hoverSeries: "",
+      selectedLabel: "",
+      inputLabel: "",
       axisBounds: [],
+      optionsList: [],
       modal: {
         name: "",
         header: "",
         message: ""
       }
     };
+  },
+  watch: {
+    // propogate selectedLabel to plottingApp
+    selectedLabel: function(newLabel, oldLabel) {
+      plottingApp.selectedLabel = newLabel;
+    }
+  },
+  computed: {
+    // determines if delete button should be visible
+    deleteValid: function() {
+      return !(this.optionsList.length == 1)
+    }
   },
   methods: {
     // return to Index.vue
@@ -195,6 +219,18 @@ export default {
       this.modal.header = "Export complete";
       this.$refs.modalComponent.show();
     },
+    // open confirm delete label modal
+    openDeleteLabelModal() {
+      this.modal.name = "delete";
+      this.modal.header = "Delete label?";
+      this.$refs.modalComponent.show();
+    },
+    // open add label modal
+    openAddLabelModal() {
+      this.modal.name = "add";
+      this.modal.header = "Add label";
+      this.$refs.modalComponent.show();
+    },
     // handle upload failed modal
     uploadFailed() {
       $("#clear").hide();
@@ -204,22 +240,55 @@ export default {
       this.modal.header = "Upload Failed";
       this.$refs.modalComponent.show();
     },
-    // validate axis bounds
-    invalidBounds(bounds) {
-      var invalid = false;
-      if (isNaN(bounds[0]) || isNaN(bounds[1]) || (bounds[0] == bounds[1])) {
-        invalid = true;
+    // add label in correct spot and handle delete button
+    addLabel() {
+      var inputIndex;
+      $.each(this.optionsList, (index, val) => {
+        if (index == 0 && this.inputLabel < val) {
+          inputIndex = index;
+          return false
+        } else if (index == this.optionsList.length - 1 && this.inputLabel > val) {
+          inputIndex = index + 1;
+          return false
+        } else if (this.inputLabel < val) {
+          inputIndex = index;
+          return false
+        }
+      });
+      this.optionsList.splice(inputIndex, 0, this.inputLabel);
+      this.selectedLabel = this.optionsList[inputIndex];
+    },
+    // remove label
+    removeLabel() {
+      var toDelete = $("#labelSelect option:selected").attr("name"),
+      delIndex = this.optionsList.indexOf(toDelete);
+      if (delIndex != -1) {
+        this.optionsList.splice(delIndex, 1);
+      } else {
+        alert("failed to remove");
       }
-      return invalid;
+      this.selectedLabel = this.optionsList[0];
+    },
+    // validate axis bounds
+    validBounds(bounds) {
+      var valid = true;
+      if (isNaN(bounds[0]) || isNaN(bounds[1]) || (bounds[0] == bounds[1])) {
+        valid = false;
+      }
+      return valid;
+    },
+    // validate label
+    validLabel(label) {
+      return label.match(/^[a-zA-Z0-9_-]{0,16}$/)
     },
     // handle modal ok click
     modalOk(modal_name) {
       if (modal_name == "edit") {
         // check validity of axisBounds
-        if (this.invalidBounds(this.axisBounds)) {
-          alert("invalid");
-        } else {
+        if (this.validBounds(this.axisBounds)) {
           $("#triggerReplot").click();
+        } else {
+          alert("invalid");
         }
       } else if (modal_name == "clear") {
         $("#clearSeries").click();
@@ -227,6 +296,15 @@ export default {
         this.newUpload();
       } else if (modal_name == "failed") {
         this.goHome();
+      } else if (modal_name == "delete") {
+        this.removeLabel();
+      } else if (modal_name == "add") {
+        // check validity of inputLabel
+        if (this.validLabel(this.inputLabel)) {
+          this.addLabel();
+        } else {
+          alert("invalid");
+        }
       }
     },
     // build series selector using seriesList
@@ -244,11 +322,8 @@ export default {
       if (plottingApp.labelList.length == 0) {
         plottingApp.labelList.push("label_1");
       }
-      // populate label selector
-      $.each(plottingApp.labelList, function(i, p) {
-        $("#labelSelect").append($("<option></option>").val(p).html(p));
-      });
-      plottingApp.selectedLabel = $("#labelSelect option:selected").val();
+      this.optionsList = plottingApp.labelList;
+      this.selectedLabel = this.optionsList[0];
     }
   },
   mounted() {
@@ -257,7 +332,7 @@ export default {
         plottingApp.filename = this.filename;
         plottingApp.csvData = this.csvData;
         plottingApp.seriesList = this.seriesList;
-        plottingApp.labelList = this.labelList;
+        plottingApp.labelList = this.labelList.sort();
         $("#maindiv").append("<div class=\"loader\"></div>");
         $("#maindiv").css("padding", "0% 5.2%");
 
@@ -993,8 +1068,7 @@ function labeler () {
   });
 
   $("#labelSelect").change(function() {
-    plottingApp.selectedLabel = $("#labelSelect option:selected").val();
-    alert(plottingApp.selectedLabel);
+    plottingApp.selectedLabel = $("#labelSelect option:selected").attr("name");
   });
 
   $("#clearSeries").click(function() {
