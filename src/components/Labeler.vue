@@ -87,6 +87,7 @@
     <button id="updateHover" style="display: none;" v-on:click="updateHoverinfo"></button>
     <button id="updateEdit" style="display: none;" v-on:click="openEditModal"></button>
     <button id="triggerReplot" style="display: none;"></button>
+    <button id="triggerRecolor" style="display: none;"></button>
     <button id="clearSeries" style="display: none;"></button>
 
   </div>
@@ -170,7 +171,6 @@ Colors.names = {
     violet: "#800080",
     red: "#ff5500",
     silver: "#c0c0c0",
-    white: "#ffffff",
     yellow: "#ffff00"
 };
 Colors.random = function() {
@@ -297,21 +297,20 @@ export default {
       this.modal.header = "Upload Failed";
       this.$refs.modalComponent.show();
     },
+    // return index in sorted labelList to add item
+    searchLabelList(array, item) {
+      if (array[0]['name'] > item) {
+        return 0
+      }
+      var i = 1;
+      while (i < array.length && !(array[i]['name'] > item && array[i-1]['name'] <= item)) {
+          i = i + 1;
+      }
+      return i;
+    },
     // add label in correct spot and handle delete button
     addLabel() {
-      var inputIndex;
-      $.each(this.optionsList, (index, val) => {
-        if (index == 0 && this.inputLabel < val) {
-          inputIndex = index;
-          return false
-        } else if (index == this.optionsList.length - 1 && this.inputLabel > val) {
-          inputIndex = index + 1;
-          return false
-        } else if (this.inputLabel < val) {
-          inputIndex = index;
-          return false
-        }
-      });
+      var inputIndex = this.searchLabelList(this.optionsList, this.inputLabel);
       this.optionsList.splice(inputIndex, 0, this.mapToColor(this.inputLabel));
       this.selectedLabel = this.optionsList[inputIndex].name;
     },
@@ -326,6 +325,7 @@ export default {
         alert("failed to remove");
       }
       this.selectedLabel = this.optionsList[0].name;
+      $("#triggerRecolor").click();
     },
     // validate axis bounds
     validBounds(bounds) {
@@ -337,8 +337,16 @@ export default {
     },
     // validate label
     validLabel(label) {
-      return label.match(/^[a-zA-Z0-9_-]{0,16}$/) 
-        && !(this.optionsList.filter(l => l.name == label))
+      return !(this.containsLabel(this.inputLabel)) && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
+    },
+    containsLabel(label) {
+      for (var key in this.optionsList) {
+        var labelObj = this.optionsList[key];
+        if (labelObj.name == label) {
+          return true
+        }
+      }
+      return false
     },
     // handle modal ok click
     modalOk(modal_name) {
@@ -362,7 +370,11 @@ export default {
         if (this.validLabel(this.inputLabel)) {
           this.addLabel();
         } else  {
-          alert("invalid");
+          if (this.containsLabel(this.inputLabel)) {
+            alert("already exists");
+          } else {
+            alert("invalid");
+          }
         }
       }
     },
@@ -582,6 +594,9 @@ function labeler () {
 
     // remove loading bar
     $(".loader").css("display", "none");
+
+    // color points
+    updateSelection();
   }
 
   /* initialize plot brushes, axes */
