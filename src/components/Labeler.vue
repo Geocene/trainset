@@ -19,9 +19,9 @@
           <button type="button" class="close" style="margin-right: 5px; float: left;" @click="openAddLabelModal()">
             <span>&plus;</span>
           </button>
-          <select id="labelSelect" v-model="selectedLabel" :required="true" @change="updateSelectedLabel">
-            <option v-for="label in optionsList" :key="label" :name="label">
-              {{ label }}
+          <select id="labelSelect" v-model="selectedLabel">
+            <option v-for="label in optionsList" :key="label.name" :name="label.name">
+              {{ label.name }}
             </option>
           </select>
           <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="openDeleteLabelModal()">
@@ -35,7 +35,7 @@
       <div id="hoverinfo" class="card">
         <div class="card-subtitle">Time: {{ time }}</div>
         <div class="card-subtitle">Value: {{ val }}</div>
-        <div class="card-subtitle">Series: {{ hoverSeries }}</div>
+        <div class="card-subtitle">Label: {{ hoverLabel }}</div>
       </div>
     </div>
     <div id="maindiv"></div>
@@ -66,7 +66,7 @@
           <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
         </template>
         <template v-else-if="modal.name == 'clear'">
-          All labels from this set will be erased. This cannot be undone.
+          All labels from this series will be erased. This cannot be undone.
         </template>
         <template v-else-if="modal.name == 'failed'">
           Make sure data is in the TRAINSET format. See help.
@@ -125,6 +125,63 @@ d3.selection.prototype.last = function() {
 // plotting app namespace
 var plottingApp = {};
 
+// available label colors
+var Colors = {};
+Colors.usedNames = {};
+Colors.names = {
+    aqua: "#00ffff",
+    azure: "#f0ffff",
+    beige: "#f5f5dc",
+    black: "#000000",
+    blue: "#0000ff",
+    brown: "#a52a2a",
+    cyan: "#00ffff",
+    darkblue: "#00008b",
+    darkcyan: "#008b8b",
+    darkgrey: "#a9a9a9",
+    darkgreen: "#006400",
+    darkkhaki: "#bdb76b",
+    darkmagenta: "#8b008b",
+    darkolivegreen: "#556b2f",
+    darkorange: "#ff8c00",
+    darkorchid: "#9932cc",
+    darkred: "#8b0000",
+    darksalmon: "#e9967a",
+    darkviolet: "#9400d3",
+    fuchsia: "#ff00ff",
+    gold: "#ffd700",
+    green: "#008000",
+    indigo: "#4b0082",
+    khaki: "#f0e68c",
+    lightblue: "#add8e6",
+    lightcyan: "#e0ffff",
+    lightgreen: "#90ee90",
+    lightgrey: "#d3d3d3",
+    lightpink: "#ffb6c1",
+    lightyellow: "#ffffe0",
+    lime: "#00ff00",
+    magenta: "#ff00ff",
+    maroon: "#800000",
+    navy: "#000080",
+    olive: "#808000",
+    orange: "#ffa500",
+    pink: "#ffc0cb",
+    purple: "#800080",
+    violet: "#800080",
+    red: "#ff5500",
+    silver: "#c0c0c0",
+    white: "#ffffff",
+    yellow: "#ffff00"
+};
+Colors.random = function() {
+  var result;
+  var count = 0;
+  for (var prop in this.names)
+      if (Math.random() < 1/++count)
+         result = prop;
+  return result;
+};
+
 export default {
   name: "labeler",
   components: {
@@ -142,7 +199,7 @@ export default {
     return {
       val: "",
       time: "",
-      hoverSeries: "",
+      hoverLabel: "",
       selectedLabel: "",
       inputLabel: "",
       axisBounds: [],
@@ -194,7 +251,7 @@ export default {
     updateHoverinfo() {
       this.time = window.time;
       this.val = window.val;
-      this.hoverSeries = window.hoverSeries;
+      this.hoverLabel = window.hoverLabel;
     },
     // update #editAxis info
     updateEditinfo() {
@@ -255,19 +312,20 @@ export default {
           return false
         }
       });
-      this.optionsList.splice(inputIndex, 0, this.inputLabel);
-      this.selectedLabel = this.optionsList[inputIndex];
+      this.optionsList.splice(inputIndex, 0, this.mapToColor(this.inputLabel));
+      this.selectedLabel = this.optionsList[inputIndex].name;
     },
     // remove label
     removeLabel() {
       var toDelete = $("#labelSelect option:selected").attr("name"),
-      delIndex = this.optionsList.indexOf(toDelete);
+      delIndex = this.optionsList.map(l => l.name).indexOf(toDelete);
       if (delIndex != -1) {
-        this.optionsList.splice(delIndex, 1);
+        var deleted = this.optionsList.splice(delIndex, 1);
+        this.deleteColor(deleted[0].color);
       } else {
         alert("failed to remove");
       }
-      this.selectedLabel = this.optionsList[0];
+      this.selectedLabel = this.optionsList[0].name;
     },
     // validate axis bounds
     validBounds(bounds) {
@@ -307,6 +365,32 @@ export default {
         }
       }
     },
+    // get random unique color
+    getRandomColor() {
+      if (!("red" in Colors.usedNames)) {
+        Colors.usedNames["red"] = Colors.names["red"];
+        return Colors.usedNames["red"]
+      } else {
+        var choosen;
+        do {
+          choosen = Colors.random();
+        } while (choosen in Colors.usedNames);
+        
+        Colors.usedNames[choosen] = Colors.names[choosen];
+        return Colors.usedNames[choosen]
+      }
+    },
+    // map label to unique color
+    mapToColor(label) {
+      var color = this.getRandomColor();
+      return {name: label, color: color};
+    },
+    // remove color from used colors
+    deleteColor(color) {
+      for (var key in Colors.usedNames) {
+        if (Colors.usedNames[key] == color) delete Colors.usedNames[key];
+      }
+    },
     // build series selector using seriesList
     handleSelector() {
       // populate series selector
@@ -322,8 +406,9 @@ export default {
       if (plottingApp.labelList.length == 0) {
         plottingApp.labelList.push("label_1");
       }
-      this.optionsList = plottingApp.labelList;
-      this.selectedLabel = this.optionsList[0];
+      this.optionsList = plottingApp.labelList.map(l => this.mapToColor(l));
+      plottingApp.labelList = this.optionsList;
+      this.selectedLabel = this.optionsList[0].name;
     }
   },
   mounted() {
@@ -568,7 +653,7 @@ function labeler () {
     .attr("cx", function(d) { return plottingApp.context_xscale(d.time); })
     .attr("cy", function(d) { return plottingApp.context_yscale(d.val); })
     .attr("r", 2)
-    .classed("selected", function(d) { return isSelected(d); });
+    .attr("style", function(d) { getPointStyle(d); });
   }
 
   /* update yaxes bounds based on selected and reference series */
@@ -707,7 +792,7 @@ function labeler () {
     .attr("cx", function(d) { return plottingApp.main_xscale(d.time); })
     .attr("cy", function(d) { return selectYScale(d); })
     .attr("r", 5)
-    .classed("selected", function(d) { return isSelected(d); });
+    .attr("style", function(d) { getPointStyle(d); });
 
     // add secondary line and update secondary point styling if there is reference
     if (secondary_data) {
@@ -737,7 +822,7 @@ function labeler () {
     .attr("pointer-events", "all")
     .on("click", function(point){
           //allow clicking on single points
-          point.selected=1-point.selected;
+          toggleSelected(point);
           updateSelection();
         });
 
@@ -745,6 +830,15 @@ function labeler () {
 
     // update xAxis svg element
     plottingApp.main.select(".x.axis").call(plottingApp.main_xaxis);
+  }
+
+  /* toggle label of point using selected label */
+  function toggleSelected(point) {
+    if (point.label != plottingApp.selectedLabel) {
+      point.label = plottingApp.selectedLabel;
+    } else {
+      point.label = '';
+    }
   }
 
   /* replot svg after changing series */
@@ -877,6 +971,9 @@ function labeler () {
 
     // re-enable mouseover info
     toggleHoverinfo(true);
+
+    // re color points
+    updateSelection();
   }
   
   // Find the nodes within the specified rectangle.
@@ -888,9 +985,9 @@ function labeler () {
           var d = node.data;
           // change selected property of points in brush
           if (!plottingApp.shiftKey) {
-            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 1 : d.selected;
+            d.label = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? plottingApp.selectedLabel : d.label;
           } else {
-            d.selected = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? 0 : d.selected;
+            d.label = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? '' : d.label;
           }
           
         } while (node = node.next);
@@ -909,7 +1006,7 @@ function labeler () {
       plottingApp.main.selectAll(".point")
       .on("mouseover", function(point) {
           plottingApp.hoverTimer = setTimeout(function() {
-            updateHoverinfo(point.actual_time, point.val, point.series);
+            updateHoverinfo(point.actual_time, point.val, point.label);
           }, 250);  
         })
       .on("mouseout", function() {
@@ -936,23 +1033,6 @@ function labeler () {
     
   }
 
-  /* update hoverbox info with point data */
-  function updateHoverinfo(time, val, series) {
-    if (time === "" && val === "" && series == "") {
-      $("#hoverinfo").hide();
-      window.time = "";
-      window.val = "";
-      window.hoverSeries = "";
-      $("#updateHover").click();
-    } else {
-      $("#hoverinfo").show();
-      window.time = formatHover(time);
-      window.val = val.toFixed(2);
-      window.hoverSeries = series.toString();
-      $("#updateHover").click();
-    }
-  }
-
   /* format csv data with data structure */ 
   function type(d) {
     d.actual_time = DateTime.fromISO(d.time, {setZone: true});
@@ -977,36 +1057,25 @@ function labeler () {
       return hoverdate
     }
   }
-  
-  /* manually update main Y axis with user input */
-  function updateMainY(axis) {
-    // handle dynamic data
-    window.editSeries = axis;
-    $("#updateEdit").click();
-  }
 
-  function updateSelection() {
-    plottingApp.main.selectAll(".point").classed("selected", function(d) { return isSelected(d); });
-    plottingApp.context.selectAll(".point").classed("selected", function(d) { return isSelected(d); });
-  }
-
-  /* calculate default extent based on data length */
-  function getDefaultExtent() {
-    var start_date = plottingApp.data[0].time,
-    d_len = plottingApp.data.length, end_date;
-    if (d_len <= 100) {
-      end_date = plottingApp.data[d_len - 1].time;
-    } else if (d_len <= 1000) {
-      end_date = plottingApp.data[100].time;
-    } else if (d_len >= 10000) {
-      end_date = plottingApp.data[1000].time;
+  /* update hoverbox info with point data */
+  function updateHoverinfo(time, val, label) {
+    if (time === "" && val === "" && label == "") {
+      $("#hoverinfo").hide();
+      window.time = "";
+      window.val = "";
+      window.hoverLabel = "";
+      $("#updateHover").click();
     } else {
-      end_date = plottingApp.data[Math.round((d_len - 1) / 10)].time;
+      $("#hoverinfo").show();
+      window.time = formatHover(time);
+      window.val = val.toFixed(2);
+      window.hoverLabel = label.toString();
+      $("#updateHover").click();
     }
-    return [start_date, end_date]
   }
 
-  /* */
+  /* return true if label is not null */
   function isSelected(d) {
     if (d.label == '') {
       return false
@@ -1030,10 +1099,10 @@ function labeler () {
      based on whether primary or reference series */
   function selectYScale(d) {
     if (d.series == plottingApp.selectedSeries) {
-      return plottingApp.main_yscale(d.val);
+      return plottingApp.main_yscale(d.val)
     }
     if (d.series == plottingApp.refSeries) {
-      return plottingApp.secondary_yscale(d.val);
+      return plottingApp.secondary_yscale(d.val)
     }
   } 
 
@@ -1045,11 +1114,49 @@ function labeler () {
     return [(1 * extent[0]) - padding * range, (1 * extent[1]) + padding * range].map(d => d.toFixed(3));
   }
 
+  /* manually update main Y axis with user input */
+  function updateMainY(axis) {
+    // handle dynamic data
+    window.editSeries = axis;
+    $("#updateEdit").click();
+  }
+
+  function updateSelection() {
+    plottingApp.main.selectAll(".point")
+      .attr("style", function(d) { return getPointStyle(d) });
+    plottingApp.context.selectAll(".point")
+      .attr("style", function(d) { return getPointStyle(d) });
+  }
+
+  /* calculate default extent based on data length */
+  function getDefaultExtent() {
+    var start_date = plottingApp.data[0].time,
+    d_len = plottingApp.data.length, end_date;
+    if (d_len <= 100) {
+      end_date = plottingApp.data[d_len - 1].time;
+    } else if (d_len <= 1000) {
+      end_date = plottingApp.data[100].time;
+    } else if (d_len >= 10000) {
+      end_date = plottingApp.data[1000].time;
+    } else {
+      end_date = plottingApp.data[Math.round((d_len - 1) / 10)].time;
+    }
+    return [start_date, end_date]
+  }
+
   /* return the bounds of the given y axis */
   function getMinMax(axis) {
     var y_vals = plottingApp.allData.filter(d => d.series == axis).map(d => d.val),
     minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
     return padExtent(minMax, 0.1);
+  }
+
+  /* return the css style string for point based on label->color mapping */
+  function getPointStyle(d) {
+    if (isSelected(d)) {
+      var color = plottingApp.labelList.find(l => l.name == d.label).color;
+      return "fill: " + color + "; stroke: " + color + "; opacity: 0.75;"
+    }
   }
 
   $("#seriesSelect").change(function() {
@@ -1075,7 +1182,7 @@ function labeler () {
     plottingApp.quadtree.visit(function(node, quad_xmin, quad_ymin, quad_xmax, quad_ymax) {
       if (!node.length) {
         do {
-          node.data.selected = 0;
+          node.data.label = '';
         } while (node = node.next);
       }
       return false;
@@ -1250,9 +1357,9 @@ svg {
 }
 
 .point.selected {
-  fill: #FF5500;
+  /*fill: #FF5500;
   fill-opacity: 0.75;
-  stroke: #FF5500;
+  stroke: #FF5500;*/
   clip-path: url(#clip);
 }
 
