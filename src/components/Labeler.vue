@@ -337,7 +337,8 @@ export default {
     },
     // validate label
     validLabel(label) {
-      return label.match(/^[a-zA-Z0-9_-]{0,16}$/)
+      return label.match(/^[a-zA-Z0-9_-]{0,16}$/) 
+        && !(this.optionsList.filter(l => l.name == label))
     },
     // handle modal ok click
     modalOk(modal_name) {
@@ -360,7 +361,7 @@ export default {
         // check validity of inputLabel
         if (this.validLabel(this.inputLabel)) {
           this.addLabel();
-        } else {
+        } else  {
           alert("invalid");
         }
       }
