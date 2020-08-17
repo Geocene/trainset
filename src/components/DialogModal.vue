@@ -22,7 +22,7 @@
 
 <script>
 export default {
-  name: 'DialogModal',
+  name: "DialogModal",
   props: {
     modalName: String,
     modalHeader: String,
@@ -64,13 +64,13 @@ export default {
   },
   computed: {
     isFailed: function() {
-      return this.modalName == 'failed';
+      return this.modalName == "failed";
     },
     isExport: function() {
-      return this.modalName == 'export';
+      return this.modalName == "export";
     },
     computedColor: function() {
-      return this.modalName == 'export' ? this.exportColor : this.defaultColor;
+      return this.modalName == "export" ? this.exportColor : this.defaultColor;
     }
   }
 };

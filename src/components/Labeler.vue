@@ -40,23 +40,7 @@
     </div>
     <div id="maindiv"></div>
 
-    <div id="legend" class="container">
-      <div class="row">
-        <div class="col">
-          <strong>How to Label Points</strong></br>
-          <strong>Click</strong> a point to toggle it as labeled</br>
-          <strong>Click & Drag</strong> over a selection of points to label them</br>
-          <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them</br>
-        </div>
-        <div class="col">
-          <strong>How to Navigate the Graph</strong></br>
-          <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
-          <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
-          <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
-          <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
-        </div>
-      </div>
-    </div>
+    <LabelerInstruction></LabelerInstruction>
 
     <DialogModal id="modal" ref="modalComponent" @clicked-ok="modalOk" :modalName="modal.name" :modalHeader="modal.header">
       <template v-slot:content>
@@ -97,7 +81,8 @@
 import * as d3 from "d3"
 import * as dc from "dc"
 import { largestTriangleThreeBucket } from "d3fc-sample";
-import DialogModal from "./Modal";
+import DialogModal from "./DialogModal";
+import LabelerInstruction from "./LabelerInstruction";
 const { DateTime } = require("luxon");
 
 d3.selection.prototype.moveToFront = function() {
@@ -185,7 +170,8 @@ Colors.random = function() {
 export default {
   name: "labeler",
   components: {
-    DialogModal
+    DialogModal,
+    LabelerInstruction
   },
   props: {
     csvData: Array,
@@ -253,10 +239,6 @@ export default {
       this.val = window.val;
       this.hoverLabel = window.hoverLabel;
     },
-    // update #editAxis info
-    updateEditinfo() {
-      this.axisBounds = window.axisBounds[window.editSeries];
-    },
     // open clear modal
     openClearModal() {
       this.modal.name = "clear";
@@ -265,7 +247,7 @@ export default {
     },
     // open edit modal
     openEditModal() {
-      this.axisBounds = window.axisBounds[window.editSeries];
+      this.axisBounds = window.axisBounds[window.editSeries].slice(0);
       this.modal.name = "edit";
       this.modal.header = "Edit Axis Bounds";
       this.$refs.modalComponent.show();
@@ -319,13 +301,15 @@ export default {
       var toDelete = $("#labelSelect option:selected").attr("name"),
       delIndex = this.optionsList.map(l => l.name).indexOf(toDelete);
       if (delIndex != -1) {
-        var deleted = this.optionsList.splice(delIndex, 1);
-        this.deleteColor(deleted[0].color);
+        var deleted = this.optionsList.splice(delIndex, 1)[0];
+        this.deleteColor(deleted.color);
+        // remove label from plottingApp.allData
+        plottingApp.allData.filter(d => d.label == deleted.name).map(d => d.label = '');
+        this.selectedLabel = this.optionsList[0].name;
+        $("#triggerRecolor").click();
       } else {
         alert("failed to remove");
       }
-      this.selectedLabel = this.optionsList[0].name;
-      $("#triggerRecolor").click();
     },
     // validate axis bounds
     validBounds(bounds) {
@@ -353,6 +337,7 @@ export default {
       if (modal_name == "edit") {
         // check validity of axisBounds
         if (this.validBounds(this.axisBounds)) {
+          window.axisBounds[window.editSeries] = this.axisBounds.slice(0);
           $("#triggerReplot").click();
         } else {
           alert("invalid");
@@ -583,24 +568,20 @@ function labeler () {
     defaultExtent[0] = plottingApp.context_xscale.domain()[0];
     plottingApp.main_xscale.domain(defaultExtent);
 
-    initPlot();
+    initPlot(defaultExtent);
     updateYAxis();
     updateMain();
     plotContext();
 
-    plottingApp.plot.context_brush.call(plottingApp.context_brush.move, 
-      defaultExtent.map(plottingApp.context_xscale));
-    plottingApp.plot.context_brush.moveToBack();
+    // color points
+    updateSelection();
 
     // remove loading bar
     $(".loader").css("display", "none");
-
-    // color points
-    updateSelection();
   }
 
-  /* initialize plot brushes, axes */
-  function initPlot() {
+  /* initialize plot brushes, axes to default extent */
+  function initPlot(defaultExtent) {
     // create context and main x axes
     plottingApp.main.append("g")
     .attr("class", "x axis")
@@ -646,6 +627,10 @@ function labeler () {
             plottingApp.plot.context_brush.on("mouseup.brush", null);
         }
     });
+
+    // set context brush to default extent
+    plottingApp.plot.context_brush.call(plottingApp.context_brush.move, 
+      defaultExtent.map(plottingApp.context_xscale));
   }
 
   /* plot context graph line */
@@ -770,7 +755,7 @@ function labeler () {
     }
   }
 
-  /* redraw main graph with new points */
+  /* redraw main graph with new points and color them */
   function updateMain() {
     // subset to only data in current domain
     var x_domain = plottingApp.main_xscale.domain();
@@ -843,6 +828,7 @@ function labeler () {
         });
 
     toggleHoverinfo(true);
+    updateSelection();
 
     // update xAxis svg element
     plottingApp.main.select(".x.axis").call(plottingApp.main_xaxis);
@@ -863,7 +849,6 @@ function labeler () {
     updateYAxis();
     plotContext();
     updateMain();
-    updateSelection();
   }
 
   /* downsample context points using largest triangle three buckets algorithm
@@ -1172,6 +1157,8 @@ function labeler () {
     if (isSelected(d)) {
       var color = plottingApp.labelList.find(l => l.name == d.label).color;
       return "fill: " + color + "; stroke: " + color + "; opacity: 0.75;"
+    } else {
+      return "fill: black; stroke: none; opacity: 1;"
     }
   }
 
@@ -1208,6 +1195,10 @@ function labeler () {
 
   $("#triggerReplot").click(function() {
     replot();
+   });
+
+  $("#triggerRecolor").click(function() {
+    updateSelection();
    });
 
   $("#export").click(function() {
