@@ -2,21 +2,21 @@
   <div class="container-fluid" id="plotBox">
 
     <nav class="navbar navbar-expand fixed-top"> 
-      <h1 class="navbar-brand"><div class="homeLink" @click="newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
+      <h1 class="navbar-brand"><div class="homeLink" @click="routeHandler().newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
       <ul class="navbar-nav ml-auto">
-        <div class="nav-link" @click="newHelp()">Help</div>
-        <div class="nav-link" @click="newLicense()">License</div>
+        <div class="nav-link" @click="routeHandler().newHelp()">Help</div>
+        <div class="nav-link" @click="routeHandler().newLicense()">License</div>
         <li class="nav-item">
-          <div class="nav-link" id="clear" @click="openClearModal()">Clear</div>
+          <div class="nav-link" id="clear" @click="modalHandler().openClear()">Clear</div>
         </li>
-        <div class="nav-link" id="export" @click="openExportModal()">Export</div>
+        <div class="nav-link" id="export" @click="modalHandler().openExport()">Export</div>
       </ul>
     </nav>
 
     <div id="hoverbox">
       <div id="selector">
         <div id="labelSelector">
-          <button type="button" class="close" style="margin-right: 5px; float: left;" @click="openAddLabelModal()">
+          <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
             <span>&plus;</span>
           </button>
           <select id="labelSelect" v-model="selectedLabel">
@@ -24,7 +24,7 @@
               {{ label.name }}
             </option>
           </select>
-          <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="openDeleteLabelModal()">
+          <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
             <span>&times;</span>
           </button>
         </div>
@@ -32,10 +32,10 @@
           <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
         </div>
       </div>
-      <div id="hoverinfo" class="card">
-        <div class="card-subtitle">Time: {{ time }}</div>
-        <div class="card-subtitle">Value: {{ val }}</div>
-        <div class="card-subtitle">Label: {{ hoverLabel }}</div>
+      <div id="hoverinfo" class="card" style="display: none;">
+        <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
+        <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
+        <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
       </div>
     </div>
     <div id="maindiv"></div>
@@ -68,8 +68,8 @@
     </DialogModal>
 
     <!-- invisible buttons to get from vue scope to labeler() -->
-    <button id="updateHover" style="display: none;" v-on:click="updateHoverinfo"></button>
-    <button id="updateEdit" style="display: none;" v-on:click="openEditModal"></button>
+    <button id="updateHover" style="display: none;" @click="updateHoverinfo()"></button>
+    <button id="updateEdit" style="display: none;" @click="modalHandler().openEdit()"></button>
     <button id="triggerReplot" style="display: none;"></button>
     <button id="triggerRecolor" style="display: none;"></button>
     <button id="clearSeries" style="display: none;"></button>
@@ -183,19 +183,41 @@ export default {
   },
   data: function() {
     return {
-      val: "",
-      time: "",
-      hoverLabel: "",
+      hoverinfo: {
+        val: "",
+        time: "",
+        label: "",
+      },
+      modal: {
+        name: "",
+        header: ""
+      },
       selectedLabel: "",
       inputLabel: "",
       axisBounds: [],
-      optionsList: [],
-      modal: {
-        name: "",
-        header: "",
-        message: ""
-      }
+      optionsList: []
     };
+  },
+  mounted: function() {
+    if (this.isValid) {
+      plottingApp.headerStr = this.headerStr;
+      plottingApp.filename = this.filename;
+      plottingApp.csvData = this.csvData;
+      plottingApp.seriesList = this.seriesList;
+      plottingApp.labelList = this.labelList.sort();
+      $("#maindiv").append("<div class=\"loader\"></div>");
+      $("#maindiv").css("padding", "0% 5.2%");
+
+      // populate selectors
+      this.handleSelector();
+
+      labeler();
+    } else {
+      $("#clear").hide();
+      $("#export").hide();
+      $("#hoverbox").hide();
+      this.modalHandler().openFailed();
+    }
   },
   watch: {
     // propogate selectedLabel to plottingApp
@@ -211,73 +233,75 @@ export default {
   },
   methods: {
     // return to Index.vue
-    goHome() {
-      this.$router.push({ name: "home", params: {nextUp: false} });
+    routeHandler: function() {
+      var self = this;
+      return {
+        // push home to vue router
+        goHome: function() {
+          self.$router.push({ name: "home", params: {nextUp: false} });
+        },
+        // push home with new upload to vue router
+        newUpload: function() {
+          self.$router.push({ name: "home", params: {nextUp: true} });
+        },
+        // open Index.vue in new window
+        newHome: function() {
+          let routeData = self.$router.resolve({ name: "home", params: {nextUp: false} });
+          window.open(routeData.href, "_blank");
+        },
+        // open Help.vue in new window
+        newHelp: function() {
+          var routeData = self.$router.resolve({ name: "help" });
+          window.open(routeData.href, "_blank");
+        },
+        // open License.vue in new window
+        newLicense: function() {
+          var routeData = self.$router.resolve({ name: "license" });
+          window.open(routeData.href, "_blank");
+        },
+      }
     },
-    // return to Index.vue and trigger file upload selection
-    newUpload() {
-      this.$router.push({ name: "home", params: {nextUp: true} });
-    },
-    // open Help.vue in new window
-    newHelp() {
-      let routeData = this.$router.resolve({ name: "help" });
-      window.open(routeData.href, "_blank");
-    },
-    // open License.vue in new window
-    newLicense() {
-      let routeData = this.$router.resolve({ name: "license" });
-      window.open(routeData.href, "_blank");
-    },
-    // open Index.vue in new window
-    newHome() {
-      let routeData = this.$router.resolve({ name: "home", params: {nextUp: false} });
-      window.open(routeData.href, "_blank");
+    modalHandler: function() {
+      var self = this;
+      return {
+        openClear: function() {
+          self.modal.name = "clear";
+          self.modal.header = "Clear all labels?";
+          self.$refs.modalComponent.show();
+        },
+        openEdit: function() {
+          self.axisBounds = plottingApp.axisBounds[plottingApp.editSeries].slice(0);
+          self.modal.name = "edit";
+          self.modal.header = "Edit Axis Bounds";
+          self.$refs.modalComponent.show();
+        },
+        openExport: function() {
+          self.modal.name = "export";
+          self.modal.header = "Export complete";
+          self.$refs.modalComponent.show();
+        },
+        openDeleteLabel: function() {
+          self.modal.name = "delete";
+          self.modal.header = "Delete label?";
+          self.$refs.modalComponent.show();
+        },
+        openAddLabel: function() {
+          self.modal.name = "add";
+          self.modal.header = "Add label";
+          self.$refs.modalComponent.show();
+        },
+        openFailed: function() {
+          self.modal.name = "failed";
+          self.modal.header = "Upload Failed";
+          self.$refs.modalComponent.show();
+        }
+      }
     },
     // update #hoverinfo data
     updateHoverinfo() {
-      this.time = window.time;
-      this.val = window.val;
-      this.hoverLabel = window.hoverLabel;
-    },
-    // open clear modal
-    openClearModal() {
-      this.modal.name = "clear";
-      this.modal.header = "Clear all labels?";
-      this.$refs.modalComponent.show();
-    },
-    // open edit modal
-    openEditModal() {
-      this.axisBounds = window.axisBounds[window.editSeries].slice(0);
-      this.modal.name = "edit";
-      this.modal.header = "Edit Axis Bounds";
-      this.$refs.modalComponent.show();
-    },
-    // open export modal
-    openExportModal() {
-      this.modal.name = "export";
-      this.modal.header = "Export complete";
-      this.$refs.modalComponent.show();
-    },
-    // open confirm delete label modal
-    openDeleteLabelModal() {
-      this.modal.name = "delete";
-      this.modal.header = "Delete label?";
-      this.$refs.modalComponent.show();
-    },
-    // open add label modal
-    openAddLabelModal() {
-      this.modal.name = "add";
-      this.modal.header = "Add label";
-      this.$refs.modalComponent.show();
-    },
-    // handle upload failed modal
-    uploadFailed() {
-      $("#clear").hide();
-      $("#export").hide();
-      $("#hoverbox").hide();
-      this.modal.name = "failed";
-      this.modal.header = "Upload Failed";
-      this.$refs.modalComponent.show();
+      this.hoverinfo.time = plottingApp.hoverinfo.time;
+      this.hoverinfo.val = plottingApp.hoverinfo.val;
+      this.hoverinfo.label = plottingApp.hoverinfo.label;
     },
     // return index in sorted labelList to add item
     searchLabelList(array, item) {
@@ -334,22 +358,22 @@ export default {
     },
     // handle modal ok click
     modalOk(modal_name) {
-      if (modal_name == "edit") {
+      if (modal_name == "clear") {
+        $("#clearSeries").click();
+      } else if (modal_name == "export") {
+        this.routeHandler().newUpload();
+      } else if (modal_name == "failed") {
+        this.routeHandler().goHome();
+      } else if (modal_name == "delete") {
+        this.removeLabel();
+      } else if (modal_name == "edit") {
         // check validity of axisBounds
         if (this.validBounds(this.axisBounds)) {
-          window.axisBounds[window.editSeries] = this.axisBounds.slice(0);
+          plottingApp.axisBounds[plottingApp.editSeries] = this.axisBounds.slice(0);
           $("#triggerReplot").click();
         } else {
           alert("invalid");
         }
-      } else if (modal_name == "clear") {
-        $("#clearSeries").click();
-      } else if (modal_name == "export") {
-        this.newUpload();
-      } else if (modal_name == "failed") {
-        this.goHome();
-      } else if (modal_name == "delete") {
-        this.removeLabel();
       } else if (modal_name == "add") {
         // check validity of inputLabel
         if (this.validLabel(this.inputLabel)) {
@@ -408,36 +432,10 @@ export default {
       plottingApp.labelList = this.optionsList;
       this.selectedLabel = this.optionsList[0].name;
     }
-  },
-  mounted() {
-      if (this.isValid) {
-        plottingApp.headerStr = this.headerStr;
-        plottingApp.filename = this.filename;
-        plottingApp.csvData = this.csvData;
-        plottingApp.seriesList = this.seriesList;
-        plottingApp.labelList = this.labelList.sort();
-        $("#maindiv").append("<div class=\"loader\"></div>");
-        $("#maindiv").css("padding", "0% 5.2%");
-
-        // populate selectors
-        this.handleSelector();
-
-        $("#hoverinfo").hide();
-
-        // global axis bounds dict
-        window.axisBounds = {};
-
-        labeler();
-      } else {
-        this.uploadFailed();
-      }
   }
 }
 
-function labeler () {
-  // main -- main plot
-  // context -- smaller context plot for zooming, scrolling
-
+function labeler() {
   //margins
   plottingApp.main_margin = {top: 10, right: 10, bottom: 100, left: 40},
   plottingApp.context_margin = {top: 430, right: 40, bottom: 20, left: 40},
@@ -547,6 +545,9 @@ function labeler () {
   plottingApp.refSeries = "";
   // plot namespace (for svg selections associated with d3 objects)
   plottingApp.plot = {};
+  // axis bounds & hoverinfo dict
+  plottingApp.axisBounds = {},
+  plottingApp.hoverinfo = {};
 
   $(function () {
    init();
@@ -661,11 +662,11 @@ function labeler () {
   function updateYAxis() {
     // set y-axis based on selected series
     var minMax;
-    if (window.axisBounds[plottingApp.selectedSeries]) {
-      minMax = window.axisBounds[plottingApp.selectedSeries];
+    if (plottingApp.axisBounds[plottingApp.selectedSeries]) {
+      minMax = plottingApp.axisBounds[plottingApp.selectedSeries];
     } else {
       minMax = getMinMax(plottingApp.selectedSeries);
-      window.axisBounds[plottingApp.selectedSeries] = minMax;
+      plottingApp.axisBounds[plottingApp.selectedSeries] = minMax;
     }
 
     plottingApp.main_yscale.domain(minMax);
@@ -713,11 +714,11 @@ function labeler () {
 
     // handle ref series
     if (plottingApp.refSeries != "" && plottingApp.selectedSeries != plottingApp.refSeries) {
-      if (window.axisBounds[plottingApp.refSeries]) {
-        minMax = window.axisBounds[plottingApp.refSeries];
+      if (plottingApp.axisBounds[plottingApp.refSeries]) {
+        minMax = plottingApp.axisBounds[plottingApp.refSeries];
       } else {
         minMax = getMinMax(plottingApp.refSeries);
-        window.axisBounds[plottingApp.refSeries] = minMax;
+        plottingApp.axisBounds[plottingApp.refSeries] = minMax;
       }
 
       plottingApp.secondary_yscale.domain(minMax);
@@ -1063,15 +1064,15 @@ function labeler () {
   function updateHoverinfo(time, val, label) {
     if (time === "" && val === "" && label == "") {
       $("#hoverinfo").hide();
-      window.time = "";
-      window.val = "";
-      window.hoverLabel = "";
+      plottingApp.hoverinfo.time = "";
+      plottingApp.hoverinfo.val = "";
+      plottingApp.hoverinfo.label = "";
       $("#updateHover").click();
     } else {
       $("#hoverinfo").show();
-      window.time = formatHover(time);
-      window.val = val.toFixed(2);
-      window.hoverLabel = label.toString();
+      plottingApp.hoverinfo.time = formatHover(time);
+      plottingApp.hoverinfo.val = val.toFixed(2);
+      plottingApp.hoverinfo.label = label.toString();
       $("#updateHover").click();
     }
   }
@@ -1118,7 +1119,7 @@ function labeler () {
   /* manually update main Y axis with user input */
   function updateMainY(axis) {
     // handle dynamic data
-    window.editSeries = axis;
+    plottingApp.editSeries = axis;
     $("#updateEdit").click();
   }
 
