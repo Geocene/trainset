@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <nav class="navbar navbar-expand-lg fixed-top"> 
-      <h1 class="navbar-brand">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></h1>
+      <h1 class="navbar-brand">TRAINSET<img id="logo" src="/static/trainset_logo.png"></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
         <router-link class="nav-link" v-bind:to="'/license'">License</router-link>
@@ -11,7 +11,7 @@
       <h3 id="welcome">Welcome to TRAINSET</h3>
       <button type="button" class="btn btn-lg btn-outline-danger upload" id="upload" @click="upload">Upload Data</button>
       <input type="file" id="upload-file" ref="fileInput" class="fileCheck" @change="fileCheck">
-      <a id="sampleCSV" href="/static/sample_trainset.csv" download>sample CSV</a>
+      <a id="sampleCSV" href="/static/files/sample_trainset.csv" download>sample CSV</a>
     </div>
     <br>
     <div id="info">

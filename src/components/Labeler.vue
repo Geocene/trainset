@@ -2,7 +2,7 @@
   <div class="container-fluid" id="plotBox">
 
     <nav class="navbar navbar-expand fixed-top"> 
-      <h1 class="navbar-brand"><div class="homeLink" @click="routeHandler().newHome()">TRAINSET<img id="logo" src="../assets/trainset_logo.png"></div></h1>
+      <h1 class="navbar-brand"><div class="homeLink" @click="routeHandler().newHome()">TRAINSET<img id="logo" src="/static/trainset_logo.png"></div></h1>
       <ul class="navbar-nav ml-auto">
         <div class="nav-link" @click="routeHandler().newHelp()">Help</div>
         <div class="nav-link" @click="routeHandler().newLicense()">License</div>
@@ -78,8 +78,8 @@
 </template>
 
 <script>
-import * as labeler from '../assets/js/labeler.js'
-import colorMixin from '../assets/js/colorMixin.js'
+import * as labeler from "@/assets/js/labeler.js"
+import colorMixin from "@/mixins/colorMixin.js"
 import DialogModal from "./DialogModal"
 import LabelerInstruction from "./LabelerInstruction"
 
@@ -225,11 +225,11 @@ export default {
     },
     // return index in sorted labelList to add item
     searchLabelList(array, item) {
-      if (array[0]['name'] > item) {
+      if (array[0]["name"] > item) {
         return 0
       }
       var i = 1;
-      while (i < array.length && !(array[i]['name'] > item && array[i-1]['name'] <= item)) {
+      while (i < array.length && !(array[i]["name"] > item && array[i-1]["name"] <= item)) {
           i = i + 1;
       }
       return i;
@@ -248,7 +248,7 @@ export default {
         var deleted = this.optionsList.splice(delIndex, 1)[0];
         this.deleteColor(deleted.color);
         // remove label from plottingApp.allData
-        plottingApp.allData.filter(d => d.label == deleted.name).map(d => d.label = '');
+        plottingApp.allData.filter(d => d.label == deleted.name).map(d => d.label = "");
         this.selectedLabel = this.optionsList[0].name;
         $("#triggerRecolor").click();
       } else {
