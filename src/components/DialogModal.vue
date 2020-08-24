@@ -76,7 +76,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .exportHeader {
   background-color: #7E4C64;
 }
@@ -96,7 +96,7 @@ export default {
   background-color: #7E4C64;
 }
 
-.exportBox {
+#modal >>> .exportBox {
   border-radius: 10px;
   border: 3px solid #7E4C64;
   position: fixed;
@@ -123,7 +123,7 @@ export default {
   background-color: #D84800;
 }
 
-.defaultBox {
+#modal >>> .defaultBox {
   border-radius: 10px;
   border: 3px solid #D84800;
   position: fixed;

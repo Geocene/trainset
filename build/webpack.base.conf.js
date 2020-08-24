@@ -76,10 +76,19 @@ module.exports = {
         }
       },
       {
-        test: /\.(csv|xlsx|xls)$/,
+        test: /\.(xlsx|xls)$/,
         loader: 'file-loader',
         options: {
           name: `[name].[ext]`
+        }
+      },
+      {
+        test: /\.csv$/,
+        loader: 'csv-loader',
+        options: {
+          dynamicTyping: true,
+          header: true,
+          skipEmptyLines: true
         }
       }
     ]
