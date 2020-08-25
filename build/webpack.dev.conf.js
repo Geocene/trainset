@@ -66,7 +66,6 @@ const devWebpackConfig = merge(baseWebpackConfig, {
           globOptions: {
             ignore: ['.*']
           }
-          // ignore: ['.*']
         }
       ]
     })
