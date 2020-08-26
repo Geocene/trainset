@@ -11,6 +11,9 @@ require('popper.js');
 require('bootstrap');
 require('bootstrap/dist/css/bootstrap.min.css');
 
+// register global components (prefix 'Base'-)
+import '@/components/globals'
+
 Vue.use(VModal);
 
 Vue.directive('visible', (el, binding) => {

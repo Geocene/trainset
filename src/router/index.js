@@ -2,10 +2,10 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 
 // router components
-import Index from '@/components/Index'
-import Help from '@/components/Help'
-import Labeler from '@/components/Labeler'
-import License from '@/components/License'
+import Index from '@/views/Index'
+import Help from '@/views/Help'
+import Labeler from '@/views/Labeler'
+import License from '@/views/License'
 
 Vue.use(VueRouter);
 
