@@ -16,7 +16,6 @@ export default {
     generateNextColor() {
       var retColor = this.colorCSV.find(color => color.used == false);
       if (typeof retColor === "undefined") {
-        alert('restart');
         var retCode = this.colorCSV[this.fullColorIndex].code;
         this.fullColorIndex += 1;
         if (this.fullColorIndex == this.colorCSV.length) {
