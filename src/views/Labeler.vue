@@ -1,81 +1,79 @@
 <template>
-  <div class="container-fluid" id="plotBox">
-    <BaseNavbar>
-      <template v-slot:nav-content>
-        <h1 class="navbar-brand"><div class="homeLink" @click="routeHandler().newHome()">TRAINSET<img id="logo" src="/static/trainset_logo.png"></div></h1>
-        <ul class="navbar-nav ml-auto">
-          <div class="nav-link" @click="routeHandler().newHelp()">Help</div>
-          <div class="nav-link" @click="routeHandler().newLicense()">License</div>
-          <li class="nav-item">
-            <div class="nav-link" id="clear" @click="modalHandler().openClear()">Clear</div>
-          </li>
-          <div class="nav-link" id="export" @click="modalHandler().openExport()">Export</div>
-        </ul>
-      </template>
-    </BaseNavbar>
-
-    <div id="hoverbox">
-      <div id="selector">
-        <div id="labelSelector">
-          <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
-            <span>&plus;</span>
-          </button>
-          <select id="labelSelect" v-model="selectedLabel">
-            <option v-for="label in optionsList" :key="label.name" :name="label.name">
-              {{ label.name }}
-            </option>
-          </select>
-          <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
-            <span>&times;</span>
-          </button>
+  <BaseView class="container-fluid" id="plotBox">
+    <template v-slot:navbar-content>
+      <h1 class="navbar-brand"><div class="homeLink" @click="routeHandler().newHome()">TRAINSET<img id="logo" src="/static/trainset_logo.png"></div></h1>
+      <ul class="navbar-nav ml-auto">
+        <div class="nav-link" @click="routeHandler().newHelp()">Help</div>
+        <div class="nav-link" @click="routeHandler().newLicense()">License</div>
+        <li class="nav-item">
+          <div class="nav-link" id="clear" @click="modalHandler().openClear()">Clear</div>
+        </li>
+        <div class="nav-link" id="export" @click="modalHandler().openExport()">Export</div>
+      </ul>
+    </template>
+    <template v-slot:main-content>
+      <div id="hoverbox">
+        <div id="selector">
+          <div id="labelSelector">
+            <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
+              <span>&plus;</span>
+            </button>
+            <select id="labelSelect" v-model="selectedLabel">
+              <option v-for="label in optionsList" :key="label.name" :name="label.name">
+                {{ label.name }}
+              </option>
+            </select>
+            <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
+              <span>&times;</span>
+            </button>
+          </div>
+          <div id="seriesSelector" style="float: right;">
+            <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
+          </div>
         </div>
-        <div id="seriesSelector" style="float: right;">
-          <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
+        <div id="hoverinfo" class="card" style="display: none;">
+          <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
+          <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
+          <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
         </div>
       </div>
-      <div id="hoverinfo" class="card" style="display: none;">
-        <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
-        <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
-        <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
-      </div>
-    </div>
-    <div id="maindiv"></div>
+      <div id="maindiv"></div>
 
-    <LabelerInstruction></LabelerInstruction>
+      <LabelerInstruction></LabelerInstruction>
 
-    <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" :modal-name="modal.name" :modal-header="modal.header">
-      <template v-slot:content>
-        <template v-if="modal.name == 'edit'">
-          <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
-          - 
-          <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
+      <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" :modal-name="modal.name" :modal-header="modal.header">
+        <template v-slot:content>
+          <template v-if="modal.name == 'edit'">
+            <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
+            - 
+            <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
+          </template>
+          <template v-else-if="modal.name == 'clear'">
+            All labels from this series will be erased. This cannot be undone.
+          </template>
+          <template v-else-if="modal.name == 'failed'">
+            Make sure data is in the TRAINSET format. See help.
+          </template>
+          <template v-else-if="modal.name == 'export'">
+            Upload new data set or continue labeling this one?
+          </template>
+          <template v-else-if="modal.name == 'delete'">
+            Are you sure you want to delete label: {{ selectedLabel }}
+          </template>
+          <template v-else-if="modal.name == 'add'">
+            <input type="text" id="inputLabel" v-model="inputLabel"/> 
+          </template>
         </template>
-        <template v-else-if="modal.name == 'clear'">
-          All labels from this series will be erased. This cannot be undone.
-        </template>
-        <template v-else-if="modal.name == 'failed'">
-          Make sure data is in the TRAINSET format. See help.
-        </template>
-        <template v-else-if="modal.name == 'export'">
-          Upload new data set or continue labeling this one?
-        </template>
-        <template v-else-if="modal.name == 'delete'">
-          Are you sure you want to delete label: {{ selectedLabel }}
-        </template>
-        <template v-else-if="modal.name == 'add'">
-          <input type="text" id="inputLabel" v-model="inputLabel"/> 
-        </template>
-      </template>
-    </LabelerModal>
+      </LabelerModal>
 
-    <!-- invisible buttons to get from vue scope to labeler() -->
-    <button id="updateHover" style="display: none;" @click="updateHoverinfo()"></button>
-    <button id="updateEdit" style="display: none;" @click="modalHandler().openEdit()"></button>
-    <button id="triggerReplot" style="display: none;"></button>
-    <button id="triggerRecolor" style="display: none;"></button>
-    <button id="clearSeries" style="display: none;"></button>
-
-  </div>
+      <!-- invisible buttons to get from vue scope to labeler() -->
+      <button id="updateHover" style="display: none;" @click="updateHoverinfo()"></button>
+      <button id="updateEdit" style="display: none;" @click="modalHandler().openEdit()"></button>
+      <button id="triggerReplot" style="display: none;"></button>
+      <button id="triggerRecolor" style="display: none;"></button>
+      <button id="clearSeries" style="display: none;"></button>
+    </template>
+  </BaseView>
 </template>
 
 <script>

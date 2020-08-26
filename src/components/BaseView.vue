@@ -1,7 +1,10 @@
 <template>
   <div>
     <BaseNavbar>
-      <slot name="nav-content"></slot>
+      <template v-slot:nav-content>
+        <slot name="navbar-content">
+        </slot>
+      </template>
     </BaseNavbar>
     <slot name="main-content"></slot>
   </div>

@@ -1,25 +1,4 @@
 <template>
-  <!-- <div class="container">
-    <BaseNavbar></BaseNavbar>
-    <div>
-      <h3 class="title">Welcome to TRAINSET</h3>
-      <button type="button" class="btn btn-lg btn-outline-danger upload" id="upload" @click="upload">Upload Data</button>
-      <input type="file" id="upload-file" ref="fileInput" class="fileCheck" @change="fileCheck">
-      <a id="sampleCSV" href="/static/files/sample_trainset.csv" download>sample CSV</a>
-    </div>
-    <br>
-    <div id="info">
-      <h5 class="subh">What is it?</h5>
-      TRAINSET is a graphical tool for labeling time series data. Labeling is typically used to record interesting points in time series data. For example, if you had temperature data from a sensor mounted to a stove, you could label points  that constitute cooking events. Labels could be used as-is or as a training set for machine learning algorithms. For example, TRAINSET could be used to build a training set for an algorithm that detects cooking events in temperature time series data.<br><br>
-      
-      <h5 class="subh">Where did it come from?</h5>
-      TRAINSET evolved from a tool called <a href="https://github.com/geocene/sumsarizer" target="_blank">SUMSarizer</a>. SUMSarizer helps facilitate the application of ensemble machine learning tools to time series data. Most SUMSarizer users apply the tool to detect cooking events from temperature sensors called stove use monitoring systems (SUMS). SUMS are used to monitor cookstove adoption. The development of TRAINSET was funded by the NIH Clean Cooking Implementation Science Network with funding from the NIH Common Fund for Global Health. In addition to to the development of TRAINSET, NIH also supported further development of SUMSarizer. The original development of the first SUMSarizer was supported by the Center for Effective Global Action (CEGA) and Innovations for Poverty Action (IPA). SUMSarizer is an open-source R package available on <a href="https://github.com/geocene/sumsarizer" target="_blank">SUMSarizer's GitHub page</a>.<br><br>
-      
-      <h5 class="subh">Who made it?</h5>
-      TRAINSET is maintained by <a href="https://geocene.com" target="_blank">Geocene Inc.</a> with extensive contributions from Rush Kapoor, Ajay Pillarisetti, Jeremy Coyle, Skot Croshere, Marc Paré, Hamza Benkhay, and Danny Wilson.</br></br>
-    </div>
-  </div> -->
-
   <BaseView class="container">
     <template v-slot:main-content>
       <div>
@@ -29,7 +8,7 @@
         <a id="sampleCSV" href="/static/files/sample_trainset.csv" download>sample CSV</a>
       </div>
       <br>
-      <div id="info">
+      <div class="info">
         <h5 class="subh">What is it?</h5>
         TRAINSET is a graphical tool for labeling time series data. Labeling is typically used to record interesting points in time series data. For example, if you had temperature data from a sensor mounted to a stove, you could label points  that constitute cooking events. Labels could be used as-is or as a training set for machine learning algorithms. For example, TRAINSET could be used to build a training set for an algorithm that detects cooking events in temperature time series data.<br><br>
         
@@ -151,9 +130,7 @@ export default {
 #upload { margin-top: 20px; border-width: 3px; border-color: #7E4C64; color: #7E4C64; padding: 15px 60px; }
 #upload:hover {  background: #7E4C64; color: #f4f4f4; }
 #upload-file { display: none; }
-.title { color: #7E4C64; font-weight: bold; }
-#info { text-align: left; padding-left: 100px; }
-.subh { color: #7E4C64; font-weight: 900 !important; }
+.subh { font-weight: 900 !important; }
 #sampleCSV {
   display: block;
   padding-top: 10px;
