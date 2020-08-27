@@ -264,7 +264,7 @@ export default {
     },
     // validate label
     validLabel(label) {
-      return !(this.containsLabel(this.inputLabel)) && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
+      return label.length > 0 && !(this.containsLabel(this.inputLabel)) && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
     },
     containsLabel(label) {
       for (var key in this.optionsList) {
