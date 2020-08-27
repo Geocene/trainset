@@ -1,6 +1,6 @@
 <template>
   <!-- <v-dialog /> -->
-  <modal name="modalBox" :classes="computedColor.modalBox" height="auto" :clickToClose="false" :width="250" :adaptive="true">
+  <modal id="modal" name="modalBox" height="auto" @closed="emitClosed" :classes="computedColor.modalBox" :clickToClose="false" :width="250" :adaptive="true">
       <div class="modalTitle" :class="computedColor.header">
         <h5 class="modalInfo">{{ modalHeader }}</h5>
       </div>
@@ -29,7 +29,6 @@ export default {
   },
   data: function () {
     return {
-      showModal: false,
       // vue class bindings
       exportColor: {
         "header" : "exportHeader",
@@ -44,26 +43,30 @@ export default {
         "modalBox": "defaultBox"
       },
       singleBtn: "singleBtn",
-      dualBtn: "dualBtn"
+      dualBtn: "dualBtn",
+      // handle clicking ok
+      clickedOk: false
     };
   },
   methods: {
+    emitClosed() {
+      this.$emit("closed", this.modalName);
+    },
     show() {
-      this.showModal = true;
       this.$modal.show("modalBox");
     },
     hide() {
-      this.showModal = false;
       this.$modal.hide("modalBox");
     },
     postOk() {
-      this.$emit("clicked-ok", this.modalName);
+      // this.clickedOk = true;
       this.hide();
+      this.$emit("clicked-ok", this.modalName);
     }
   },
   computed: {
     isFailed: function() {
-      return this.modalName == "failed";
+      return this.modalName.includes("failed");
     },
     isExport: function() {
       return this.modalName == "export";

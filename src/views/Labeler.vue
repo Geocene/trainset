@@ -41,7 +41,7 @@
 
       <LabelerInstruction></LabelerInstruction>
 
-      <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" :modal-name="modal.name" :modal-header="modal.header">
+      <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" @closed="postModalClose" :modal-name="modal.name" :modal-header="modal.header">
         <template v-slot:content>
           <template v-if="modal.name == 'edit'">
             <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
@@ -51,8 +51,9 @@
           <template v-else-if="modal.name == 'clear'">
             All labels from this series will be erased. This cannot be undone.
           </template>
-          <template v-else-if="modal.name == 'failed'">
-            Make sure data is in the TRAINSET format. See help.
+          <template v-else-if="modal.name.includes('failed')">
+            {{ modal.failMessage }}
+            <!-- Make sure data is in the TRAINSET format. See help. -->
           </template>
           <template v-else-if="modal.name == 'export'">
             Upload new data set or continue labeling this one?
@@ -109,7 +110,8 @@ export default {
       },
       modal: {
         name: "",
-        header: ""
+        header: "",
+        failMessage: ""
       },
       selectedLabel: "",
       inputLabel: "",
@@ -135,7 +137,7 @@ export default {
       $("#clear").hide();
       $("#export").hide();
       $("#hoverbox").hide();
-      this.modalHandler().openFailed();
+      this.modalHandler().openUploadFailed();
     }
   },
   watch: {
@@ -209,9 +211,28 @@ export default {
           self.modal.header = "Add label";
           self.$refs.modalComponent.show();
         },
-        openFailed: function() {
-          self.modal.name = "failed";
+        openUploadFailed: function() {
+          self.modal.name = "upload_failed";
           self.modal.header = "Upload Failed";
+          self.modal.failMessage = "Make sure data is in the TRAINSET format. See help.";
+          self.$refs.modalComponent.show();
+        },
+        openAxisFailed: function() {
+          self.modal.name = "axis_failed";
+          self.modal.header = "Invalid Bounds";
+          self.modal.failMessage = "Make sure input bounds are numbers.";
+          self.$refs.modalComponent.show();
+        },
+        openLabelFailed: function() {
+          self.modal.name = "label_failed";
+          self.modal.header = "Invalid Label";
+          self.modal.failMessage = "Labels can only contain letters, numbers, hyphens, or underscores. Example: my_good_label-1";
+          self.$refs.modalComponent.show();
+        },
+        openLabelExistsFailed: function() {
+          self.modal.name = "label_failed";
+          self.modal.header = "Invalid Label";
+          self.modal.failMessage = "Label already exists.";
           self.$refs.modalComponent.show();
         }
       }
@@ -264,7 +285,9 @@ export default {
     },
     // validate label
     validLabel(label) {
-      return label.length > 0 && !(this.containsLabel(this.inputLabel)) && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
+      return label.length > 0 
+            && !(this.containsLabel(this.inputLabel)) 
+            && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
     },
     containsLabel(label) {
       for (var key in this.optionsList) {
@@ -275,13 +298,24 @@ export default {
       }
       return false
     },
+    // handle modal post-close actions (for failed popup modal)
+    postModalClose(modal_name) {
+      if (this.renderModal == "failed_axis") {
+        this.$nextTick(() => this.modalHandler().openAxisFailed());
+      } else if (this.renderModal == "failed_label") {
+        this.$nextTick(() => this.modalHandler().openLabelFailed());
+      } else if (this.renderModal == "failed_label_exists") {
+        this.$nextTick(() => this.modalHandler().openLabelExistsFailed());
+      }
+      this.renderModal = "";
+    },
     // handle modal ok click
     modalOk(modal_name) {
       if (modal_name == "clear") {
         $("#clearSeries").click();
       } else if (modal_name == "export") {
         this.routeHandler().newUpload();
-      } else if (modal_name == "failed") {
+      } else if (modal_name == "upload_failed") {
         this.routeHandler().goHome();
       } else if (modal_name == "delete") {
         this.removeLabel();
@@ -291,7 +325,7 @@ export default {
           plottingApp.axisBounds[plottingApp.editSeries] = this.axisBounds.slice(0);
           $("#triggerReplot").click();
         } else {
-          alert("invalid");
+          this.renderModal = "failed_axis";
         }
       } else if (modal_name == "add") {
         // check validity of inputLabel
@@ -299,9 +333,9 @@ export default {
           this.addLabel();
         } else  {
           if (this.containsLabel(this.inputLabel)) {
-            alert("already exists");
+            this.renderModal = "failed_label_exists";
           } else {
-            alert("invalid");
+            this.renderModal = "failed_label";
           }
         }
       }

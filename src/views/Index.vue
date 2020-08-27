@@ -28,12 +28,18 @@ const strftime = require('strftime');
 
 export default {
   name: 'index',
+  data: function() {
+    return {
+      errorUpload: false
+    }
+  },
   props: {
     nextUp: Boolean
   },
   methods: {
     // push Labeler.vue invalid landing
     error() {
+      this.errorUpload = true;
       this.$router.push({
         name: 'labeler',
         params: {
@@ -48,7 +54,7 @@ export default {
     // trigger file upload
     shouldUpload() {
       if (this.nextUp === true) {
-        this.nextTick(setTimeout(() => this.upload(), 100));
+        setTimeout(() => this.upload(), 100);
       }
     },
     upload () {
@@ -102,21 +108,23 @@ export default {
             break;
           }
         }
+        // if there was no error parsing csv
+        if (!this.errorUpload) {
+          seriesList = Array.from(seriesList);
+          labelList = Array.from(labelList);
 
-        seriesList = Array.from(seriesList);
-        labelList = Array.from(labelList);
-
-        this.$router.push({
-          name: 'labeler',
-          params: {
-            csvData: plotDict,
-            filename: filename,
-            headerStr: headerStr,
-            seriesList: seriesList,
-            labelList: labelList,
-            isValid: true
-          }
-        });
+          this.$router.push({
+            name: 'labeler',
+            params: {
+              csvData: plotDict,
+              filename: filename,
+              headerStr: headerStr,
+              seriesList: seriesList,
+              labelList: labelList,
+              isValid: true
+            }
+          });
+        }
       }
     }
   },
