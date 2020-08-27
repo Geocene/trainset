@@ -96,6 +96,9 @@ export function drawLabeler(plottingApp) {
   .extent([[0,0], [plottingApp.width, plottingApp.main_height]])
   .on("end", brushedMain);
 
+  // disable default d3 brush key modifiers
+  plottingApp.main_brush.keyModifiers(false)
+
   plottingApp.context_brush = d3.brushX()
   .extent([[0,0],[plottingApp.width, plottingApp.context_height]])
   .on("end", brushedContext)
