@@ -599,7 +599,7 @@ export function drawLabeler(plottingApp) {
       .on("mouseover", function(point) {
           plottingApp.hoverTimer = setTimeout(function() {
             updateHoverinfo(point.actual_time, point.val, point.label);
-          }, 250);  
+          }, 250);
         })
       .on("mouseout", function() {
           clearTimeout(plottingApp.hoverTimer);
@@ -852,6 +852,14 @@ export function drawLabeler(plottingApp) {
         transformContext(9, 0);
       } else {
         transformContext(1, 0);
+      }
+    } else if (code == 76) {
+      // handle 'l' press over hoverinfo
+      if (plottingApp.hoverTimer && plottingApp.hoverinfo.label) {
+        if (plottingApp.selectedLabel != plottingApp.hoverinfo.label) {
+          plottingApp.selectedLabel = plottingApp.hoverinfo.label;
+          $("#updateSelectedLabel").click();
+        }
       }
     }
   });

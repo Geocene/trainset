@@ -70,6 +70,7 @@
       <!-- invisible buttons to get from vue scope to labeler() -->
       <button id="updateHover" style="display: none;" @click="updateHoverinfo()"></button>
       <button id="updateEdit" style="display: none;" @click="modalHandler().openEdit()"></button>
+      <button id="updateSelectedLabel" style="display: none;" @click="updateSelectedLabel()"></button>
       <button id="triggerReplot" style="display: none;"></button>
       <button id="triggerRecolor" style="display: none;"></button>
       <button id="clearSeries" style="display: none;"></button>
@@ -242,6 +243,10 @@ export default {
       this.hoverinfo.time = plottingApp.hoverinfo.time;
       this.hoverinfo.val = plottingApp.hoverinfo.val;
       this.hoverinfo.label = plottingApp.hoverinfo.label;
+    },
+    // update selected label with plottingApp.selectedLabel
+    updateSelectedLabel() {
+      this.selectedLabel = plottingApp.selectedLabel;
     },
     // return index in sorted labelList to add item
     searchLabelList(array, item) {
