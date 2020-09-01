@@ -31,7 +31,7 @@
             <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
           </div>
         </div>
-        <div id="hoverinfo" class="card" style="display: none;">
+        <div id="hoverinfo" class="card chartText" style="display: none;">
           <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
           <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
           <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
@@ -440,9 +440,15 @@ svg {
   position: relative;
 }
 
+.editBtn {
+  stroke: black;
+  stroke-width: 4px;
+  stroke-opacity: 0.1;
+}
+
 .mainChart {
   display: block;
-  margin-left: -75px !important;
+  margin-left: -85px !important;
 }
 
 .area {
@@ -496,7 +502,7 @@ svg {
   100% { transform: rotate(360deg); }
 }
 
-#chartTitle {
+.chartText {
   color: #000000;
 }
 

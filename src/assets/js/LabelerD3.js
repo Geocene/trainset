@@ -65,14 +65,14 @@ export function drawLabeler(plottingApp) {
   d3.select("#maindiv")
       .insert("text", "#mainChart")
         .attr("id", "chartTitle")
+        .attr("class", "chartText")
         .attr("x", (plottingApp.width / 2))             
         .attr("y", 0)
-        .attr("padding-bottom", "-300px")
-        .attr("padding", "inherit 150px")  
-        .style("font-size", "25px")
+        .style("padding-left", "45px")
+        .style("font-size", "20px")
         .text("Filename: " + plottingApp.filename)
         .attr("viewBox", "0 0 " + viewBox_width + " " + viewBox_height)
-      .attr("perserveAspectRatio", "xMinYMid meet");
+        .attr("perserveAspectRatio", "xMinYMid meet");
 
   // create clipPath for svg elements (prevents svg elements outside of main window)
   plottingApp.svg.append("defs").append("clipPath")
@@ -246,6 +246,7 @@ export function drawLabeler(plottingApp) {
     .attr("class", "point")
     .attr("cx", function(d) { return plottingApp.context_xscale(d.time); })
     .attr("cy", function(d) { return plottingApp.context_yscale(d.val); })
+    .attr("pointer-events", "none")
     .attr("r", 2);
   }
 
@@ -289,7 +290,7 @@ export function drawLabeler(plottingApp) {
     translateY = Number(lastTick.attr("transform").split(",")[1].slice(0, -1)); // drop Edit button to highest tick
 
     plottingApp.main.select(".y.axis.primary").append("g")
-    .attr("class", "button y primary")
+    .attr("class", "button y primary editBtn")
     .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")")
     .append("text")
     .text("Edit")
@@ -336,7 +337,7 @@ export function drawLabeler(plottingApp) {
       translateY = lastTick.attr("transform").split(",")[1].slice(0, -1); // drop Edit button to highest tick
 
       plottingApp.main.select(".y.axis.secondary").append("g")
-      .attr("class", "button y secondary")
+      .attr("class", "button y secondary editBtn")
       .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")")
       .append("text")
       .text("Edit")
