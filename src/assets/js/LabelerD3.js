@@ -278,10 +278,19 @@ export function drawLabeler(plottingApp) {
     var lastTick = plottingApp.main.selectAll(".y.axis.primary .tick").last(),
     translateY = Number(lastTick.attr("transform").split(",")[1].slice(0, -1)); // drop Edit button to highest tick
 
-    plottingApp.main.select(".y.axis.primary").append("g")
+    var p_editBtn = plottingApp.main.select(".y.axis.primary").append("g")
     .attr("class", "button y primary editBtn")
-    .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")")
-    .append("text")
+    .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")");
+
+    p_editBtn.append("rect")
+    .attr("stroke", "currentColor")
+    .attr("rx", "2px")
+    .attr("stroke-width", "0.75px")
+    .attr("width", "20px")
+    .attr("height", "11px")
+    .attr("transform", "translate(-18, -6)");
+
+    p_editBtn.append("text")
     .text("Edit")
     .attr("dy", "0.32em")
     .attr("cursor", "default")
@@ -325,10 +334,19 @@ export function drawLabeler(plottingApp) {
       lastTick = plottingApp.main.selectAll(".y.axis.secondary .tick").last(),
       translateY = lastTick.attr("transform").split(",")[1].slice(0, -1); // drop Edit button to highest tick
 
-      plottingApp.main.select(".y.axis.secondary").append("g")
+      var r_editBtn = plottingApp.main.select(".y.axis.secondary").append("g")
       .attr("class", "button y secondary editBtn")
-      .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")")
-      .append("text")
+      .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")");
+
+      r_editBtn.append("rect")
+      .attr("stroke", "currentColor")
+      .attr("stroke-width", "0.75px")
+      .attr("rx", "2px")
+      .attr("width", "20px")
+      .attr("height", "11px")
+      .attr("transform", "translate(-1, -6)");
+
+      r_editBtn.append("text")
       .text("Edit")
       .attr("dy", "0.32em")
       .attr("cursor", "default")

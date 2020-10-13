@@ -453,9 +453,9 @@ svg {
 }
 
 .editBtn {
-  stroke: black;
+  /*stroke: black;
   stroke-width: 4px;
-  stroke-opacity: 0.1;
+  stroke-opacity: 0.1;*/
 }
 
 .mainChart {
