@@ -120,22 +120,11 @@ export function drawLabeler(plottingApp) {
   .x(function(d) { return plottingApp.context_xscale(d.time); })
   .y(function(d) { return plottingApp.context_yscale(d.val); });
 
-  // add ref graph selector if len(seriesList) > 1
-  if (plottingApp.seriesList.length > 1) {
-    $("#ref_selector").on("change", function() {
-      if (this.checked) {
-        setReference(1);
-      } else {
-        setReference(0);
-      }
-    });
-  }
-
   // load data format and brushes
   plottingApp.shiftKey = false,
   plottingApp.brushSelector = "Invert",
   plottingApp.selectedSeries = $("#seriesSelect option:selected").val(),
-  plottingApp.refSeries = "";
+  plottingApp.refSeries = $("#referenceSelect option:selected").val();
   // plot namespace (for svg selections associated with d3 objects)
   plottingApp.plot = {};
   // axis bounds & hoverinfo dict
@@ -678,14 +667,18 @@ export function drawLabeler(plottingApp) {
 
   /* set reference series on checkbox change
      1 == checked; 0 == unchecked */
-  function setReference(b) {
-    if (b == 1) {
-      plottingApp.refSeries = plottingApp.selectedSeries;
-    } else {
-      if (plottingApp.refSeries == plottingApp.selectedSeries) {
-        plottingApp.refSeries = "";
-      }
-    }
+  // function setReference(b) {
+  //   if (b == 1) {
+  //     plottingApp.refSeries = plottingApp.selectedSeries;
+  //   } else {
+  //     if (plottingApp.refSeries == plottingApp.selectedSeries) {
+  //       plottingApp.refSeries = "";
+  //     }
+  //   }
+  // }
+
+  function setReference(series) {
+    plottingApp.refSeries = series;
   }
 
   /* return appropriate yscale applied to val of d 
@@ -757,17 +750,13 @@ export function drawLabeler(plottingApp) {
   $("#seriesSelect").change(function() {
     plottingApp.selectedSeries = $("#seriesSelect option:selected").val();
     plottingApp.data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
-
-    // only allow 1 reference series
-    if (plottingApp.refSeries != "") {
-      if (plottingApp.refSeries != plottingApp.selectedSeries) {
-        document.getElementById("ref_selector").disabled = true;
-      } else {
-        document.getElementById("ref_selector").disabled = false;
-      }
-    }
     replot();
   });
+
+  $("#referenceSelect").change(function() {
+    setReference($("#referenceSelect option:selected").val());
+    replot();
+  })
 
   $("#labelSelect").change(function() {
     plottingApp.selectedLabel = $("#labelSelect option:selected").attr("name");

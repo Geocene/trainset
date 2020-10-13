@@ -14,23 +14,33 @@
     <template v-slot:main-content>
       <div id="hoverbox">
         <div id="selector">
-          <div id="labelSelector">
-            <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
-              <span>&plus;</span>
-            </button>
-            <select id="labelSelect" v-model="selectedLabel">
-              <option v-for="label in optionsList" :key="label.name" :name="label.name">
-                {{ label.name }}
-              </option>
-            </select>
-            <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
-              <span>&times;</span>
-            </button>
-          </div>
           <div id="seriesSelector" style="float: right;">
-            <select id="seriesSelect"></select><input type=checkbox id="ref_selector"/>
+            <div id="pSeries">
+              Active Series: <select id="seriesSelect"></select>
+            </div>
+            <div id="rSeries">
+            Reference Series: <select id="referenceSelect"></select>
+            </div>
           </div>
         </div>
+        <div id="labelSelector">
+            <div id="lSelect">
+              Label:
+              <div id="lBox">
+                <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
+                  <span>&plus;</span>
+                </button>
+                <select id="labelSelect" v-model="selectedLabel">
+                  <option v-for="label in optionsList" :key="label.name" :name="label.name">
+                    {{ label.name }}
+                  </option>
+                </select>
+                <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
+                  <span>&times;</span>
+                </button>
+              </div>
+            </div>
+          </div>
         <div id="hoverinfo" class="card chartText" style="display: none;">
           <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
           <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
@@ -359,8 +369,9 @@ export default {
       // populate series selector
       $.each(plottingApp.seriesList, function(i, p) {
         $("#seriesSelect").append($("<option></option>").val(p).html(p));
+        $("#referenceSelect").append($("<option></option>").val(p).html(p));
       });
-      // if theres only one series, omit selector
+      // if theres only one series, omit selectors
       if (plottingApp.seriesList.length == 1) {
         $("#seriesSelector").hide();
         $("#labelSelector").css("margin-right", "0px");
@@ -392,14 +403,16 @@ svg {
 }
 
 #hoverbox {
-  position: absolute;
+  position: relative;
   float: right;
-  right: 20%;
+  right: 5%;
+  z-index: 5;
 }
 
 #hoverinfo {
   position: absolute;
-  margin-left: 100%;
+  margin-top: 37%;
+  margin-left: -18%;
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
@@ -407,29 +420,28 @@ svg {
 }
 
 #selector {
-  float: left;
-  position: relative;
+  right: 2%;
   margin-bottom: 10px;
   text-align: left;
   padding: 10px;
   padding-top: 0px;
+  z-index: 2;
+}
+
+#pSeries {
+  float: right;
+  padding-bottom: 10px;
 }
 
 #labelSelector {
-  float: left;
-  margin-right: 20px;
-}
-
-#ref_selector {
-  width: 25px;
-  height: 25px;
-  margin-left: 5px;
   float: right;
+  z-index: 1;
+  padding-top: 10px;
 }
 
-#ref_selector_text {
-  font-size: 12px; 
-  font-style: sans-serif;
+#lBox {
+  display: inline-block;
+  margin-right: -13% !important;
 }
 
 #secondary_line {
@@ -449,6 +461,7 @@ svg {
 .mainChart {
   display: block;
   margin-left: -85px !important;
+  margin-top: 30px;
 }
 
 .area {
