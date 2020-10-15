@@ -49,7 +49,7 @@
       </div>
       <div id="maindiv"></div>
 
-      <LabelerInstruction></LabelerInstruction>
+      <LabelerInstruction id="labelInstr"></LabelerInstruction>
 
       <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" @closed="postModalClose" :modal-name="modal.name" :modal-header="modal.header">
         <template v-slot:content>
@@ -147,6 +147,7 @@ export default {
       $("#clear").hide();
       $("#export").hide();
       $("#hoverbox").hide();
+      $("#labelInstr").hide();
       this.modalHandler().openUploadFailed();
     }
   },
