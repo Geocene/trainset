@@ -27,8 +27,8 @@ d3.selection.prototype.last = function() {
 
 export function drawLabeler(plottingApp) {
   //margins
-  plottingApp.main_margin = {top: 10, right: 10, bottom: 100, left: 40},
-  plottingApp.context_margin = {top: 430, right: 40, bottom: 20, left: 40},
+  plottingApp.main_margin = {top: 10, right: 120, bottom: 100, left: 90},
+  plottingApp.context_margin = {top: 430, right: 140, bottom: 20, left: 90},
   plottingApp.maindiv_width = $("#maindiv").width(),
   plottingApp.width = plottingApp.maindiv_width - plottingApp.main_margin.left - plottingApp.main_margin.right,
   plottingApp.main_height = 500 - plottingApp.main_margin.top - plottingApp.main_margin.bottom,
@@ -58,7 +58,7 @@ export function drawLabeler(plottingApp) {
   .classed("mainChart", true)
   .attr("id", "mainChart")
   .attr("width", viewBox_width)
-  .attr("height", viewBox_height)
+  .attr("height", viewBox_height + 50)
   .attr("viewBox", "0 0 " + viewBox_width + " " + viewBox_height)
   .attr("perserveAspectRatio", "xMinYMid meet");
 
@@ -68,11 +68,16 @@ export function drawLabeler(plottingApp) {
         .attr("class", "chartText")
         .attr("x", (plottingApp.width / 2))             
         .attr("y", 0)
-        .style("padding-left", "45px")
+        .style("padding-left", "3.57%")
         .style("font-size", "20px")
-        .text("Filename: " + plottingApp.filename)
+        // .text("Filename: " + plottingApp.filename)
         .attr("viewBox", "0 0 " + viewBox_width + " " + viewBox_height)
         .attr("perserveAspectRatio", "xMinYMid meet");
+
+  plottingApp.svg.append("text")
+  .text("Filename: " + plottingApp.filename)
+  .attr("class", "chartText")
+  .attr("transform", "translate(" + plottingApp.main_margin.left + "," + (-plottingApp.main_margin.top) + ")");
 
   // create clipPath for svg elements (prevents svg elements outside of main window)
   plottingApp.svg.append("defs").append("clipPath")
@@ -283,17 +288,18 @@ export function drawLabeler(plottingApp) {
     .attr("transform", "translate(" + (0 - axisBox.width - plottingApp.label_margin.small) + "," + translateY + ")");
 
     p_editBtn.append("rect")
+    .attr("class", "editRect")
     .attr("stroke", "currentColor")
     .attr("rx", "2px")
     .attr("stroke-width", "0.75px")
-    .attr("width", "20px")
-    .attr("height", "11px")
-    .attr("transform", "translate(-18, -6)");
+    .attr("width", "26px")
+    .attr("height", "16px")
+    .attr("transform", "translate(-21, -8)");
 
     p_editBtn.append("text")
     .text("Edit")
     .attr("dy", "0.32em")
-    .attr("cursor", "default")
+    .attr("cursor", "pointer")
     .attr("fill", "currentColor")
     .on("click", function(d, i) { return updateMainY(plottingApp.selectedSeries); });
 
@@ -339,17 +345,18 @@ export function drawLabeler(plottingApp) {
       .attr("transform", "translate(" + (axisBox.width + plottingApp.label_margin.small) + "," + translateY + ")");
 
       r_editBtn.append("rect")
+      .attr("class", "editRect")
       .attr("stroke", "currentColor")
       .attr("stroke-width", "0.75px")
       .attr("rx", "2px")
-      .attr("width", "20px")
-      .attr("height", "11px")
-      .attr("transform", "translate(-1, -6)");
+      .attr("width", "26px")
+      .attr("height", "16px")
+      .attr("transform", "translate(-4, -8)");
 
       r_editBtn.append("text")
       .text("Edit")
       .attr("dy", "0.32em")
-      .attr("cursor", "default")
+      .attr("cursor", "pointer")
       .attr("fill", "currentColor")
       .on("click", function(d, i) { return updateMainY(plottingApp.refSeries); });
     }

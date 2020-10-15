@@ -13,13 +13,18 @@
     </template>
     <template v-slot:main-content>
       <div id="hoverbox">
+        <div id="hoverinfo" class="card chartText" style="display: none;">
+          <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
+          <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
+          <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
+        </div>
         <div id="selector">
           <div id="seriesSelector" style="float: right;">
             <div id="pSeries">
               Active Series: <select id="seriesSelect"></select>
             </div>
             <div id="rSeries">
-            Reference Series: <select id="referenceSelect"></select>
+              Reference Series: <select id="referenceSelect"></select>
             </div>
           </div>
         </div>
@@ -40,11 +45,6 @@
                 </button>
               </div>
             </div>
-          </div>
-        <div id="hoverinfo" class="card chartText" style="display: none;">
-          <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
-          <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
-          <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
         </div>
       </div>
       <div id="maindiv"></div>
@@ -138,7 +138,6 @@ export default {
       plottingApp.seriesList = this.seriesList;
       plottingApp.labelList = this.labelList.sort();
       $("#maindiv").append("<div class=\"loader\"></div>");
-      $("#maindiv").css("padding", "0% 5.2%");
 
       // populate selectors
       this.handleSelector();
@@ -237,7 +236,7 @@ export default {
         openLabelFailed: function() {
           self.modal.name = "label_failed";
           self.modal.header = "Invalid Label";
-          self.modal.failMessage = "Labels can only contain letters, numbers, hyphens, or underscores. Example: my_good_label-1";
+          self.modal.failMessage = "Labels can only contain ≤16 letters, numbers, hyphens, or underscores. Example: my_good_label-1";
           self.$refs.modalComponent.show();
         },
         openLabelExistsFailed: function() {
@@ -383,6 +382,9 @@ export default {
       this.optionsList = plottingApp.labelList.map(l => this.mapToColor(l));
       plottingApp.labelList = this.optionsList;
       this.selectedLabel = this.optionsList[0].name;
+
+      // set hoverinfo right margin
+      $("#hoverinfo").css("right", $("#hoverbox").width() + 30);
     }
   }
 };
@@ -405,18 +407,17 @@ svg {
 #hoverbox {
   position: relative;
   float: right;
-  right: 5%;
+  right: 3%;
   z-index: 5;
 }
 
 #hoverinfo {
   position: absolute;
-  margin-top: 37%;
-  margin-left: -18%;
   text-align: left;
   padding: 10px;
   padding-bottom: 0px;
   width: 260px;
+  border-color: #2c3e50;
 }
 
 #selector {
@@ -441,7 +442,7 @@ svg {
 
 #lBox {
   display: inline-block;
-  margin-right: -13% !important;
+  margin-right: -10px !important;
 }
 
 #secondary_line {
@@ -452,15 +453,12 @@ svg {
   position: relative;
 }
 
-.editBtn {
-  /*stroke: black;
-  stroke-width: 4px;
-  stroke-opacity: 0.1;*/
+.editBtn:hover {
+  fill: #E3E3E3;
 }
 
 .mainChart {
   display: block;
-  margin-left: -85px !important;
   margin-top: 30px;
 }
 
@@ -516,7 +514,10 @@ svg {
 }
 
 .chartText {
-  color: #000000;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .bounds {
@@ -543,6 +544,7 @@ kbd {
 #legend {
   margin-top: 520px;
   margin-bottom: 30px;
+  display: block;
 }
 
 #logo {
