@@ -414,7 +414,7 @@ export default {
 
       // set hoverinfo right margin 
       // TODO: MOVE HOVERINFO OVER
-      $("#hoverinfo").css("right", $("#hoverbox").width() + 30);
+
     }
   }
 };
@@ -466,6 +466,7 @@ svg {
   border-color: #2c3e50;
   top: 10px;
   right: 30px;
+  margin-right: 80px;
 }
 
 #selector {
