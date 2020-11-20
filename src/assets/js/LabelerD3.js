@@ -234,7 +234,8 @@ export function drawLabeler(plottingApp) {
     plottingApp.plot.context_line = plottingApp.context.append("path")
     .datum(plottingApp.context_data)
     .attr("class", "line")
-    .attr("d", plottingApp.context_line);
+    .attr("d", plottingApp.context_line)
+    .moveToBack();
 
 
     plottingApp.context_points = plottingApp.context.selectAll(".point")

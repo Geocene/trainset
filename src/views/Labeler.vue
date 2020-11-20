@@ -12,7 +12,7 @@
       </ul>
     </template>
     <template v-slot:main-content>
-      <div id="hoverbox">
+      <div id="hoverbox"> 
         <div id="hoverinfo" class="card chartText" style="display: none;">
           <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
           <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
@@ -412,7 +412,8 @@ export default {
       plottingApp.labelList = this.optionsList;
       this.selectedLabel = this.optionsList[0].name;
 
-      // set hoverinfo right margin
+      // set hoverinfo right margin 
+      // TODO: MOVE HOVERINFO OVER
       $("#hoverinfo").css("right", $("#hoverbox").width() + 30);
     }
   }
@@ -558,6 +559,10 @@ svg {
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
+}
+
+#chartTitle {
+  font-size: 1.4rem !important;
 }
 
 .bounds {
