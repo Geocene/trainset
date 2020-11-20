@@ -74,6 +74,9 @@ export function drawLabeler(plottingApp) {
         .attr("viewBox", "0 0 " + viewBox_width + " " + viewBox_height)
         .attr("perserveAspectRatio", "xMinYMid meet");
 
+  // set instrSelect top margin
+  $("#instrSelect").css("margin-top", viewBox_height + 50);
+
   plottingApp.svg.append("text")
   .text("Filename: " + plottingApp.filename)
   .attr("class", "chartText")

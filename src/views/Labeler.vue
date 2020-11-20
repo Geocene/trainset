@@ -18,38 +18,66 @@
           <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
           <div class="card-subtitle">Label: {{ hoverinfo.label }}</div>
         </div>
-        <div id="selector">
-          <div id="seriesSelector" style="float: right;">
-            <div id="pSeries">
-              Active Series: <select id="seriesSelect"></select>
-            </div>
-            <div id="rSeries">
-              Reference Series: <select id="referenceSelect"></select>
-            </div>
-          </div>
-        </div>
-        <div id="labelSelector">
-            <div id="lSelect">
-              Label:
-              <div id="lBox">
-                <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
-                  <span>&plus;</span>
-                </button>
-                <select id="labelSelect" v-model="selectedLabel">
-                  <option v-for="label in optionsList" :key="label.name" :name="label.name">
-                    {{ label.name }}
-                  </option>
-                </select>
-                <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
-                  <span>&times;</span>
-                </button>
-              </div>
-            </div>
-        </div>
       </div>
       <div id="maindiv"></div>
 
-      <LabelerInstruction id="labelInstr"></LabelerInstruction>
+      <div id="instrSelect">
+        <div id="leftInstr">
+            <div class="row">
+              <div class="col" id="leftInstr">
+                <strong>How to Label Points</strong></br>
+                <strong>Click</strong> a point to toggle it as labeled</br>
+                <strong>Click & Drag</strong> over a selection of points to label them</br>
+                <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them</br>
+              </div>
+            </div>
+        </div>
+        <div id="rightInstr">
+          <div class="row">
+            <div class="col" id="rightInstr">
+              <strong>How to Navigate the Graph</strong></br>
+              <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
+              <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
+              <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
+              <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
+            </div>
+          </div>
+        </div>
+        <div id="selectors">
+          <div class="row">
+            <div class="col" id="leftInstr">
+              <div id="selector">
+                <div id="seriesSelector" style="float: right;">
+                  <div id="pSeries">
+                    Active Series: <select id="seriesSelect"></select>
+                  </div>
+                  <div id="rSeries">
+                    Reference Series: <select id="referenceSelect"></select>
+                  </div>
+                  <div id="labelSelector">
+                      <div id="lSelect">
+                        Label:
+                        <div id="lBox">
+                          <button type="button" class="close" style="margin-right: 5px; float: left;" @click="modalHandler().openAddLabel()">
+                            <span>&plus;</span>
+                          </button>
+                          <select id="labelSelect" v-model="selectedLabel">
+                            <option v-for="label in optionsList" :key="label.name" :name="label.name">
+                              {{ label.name }}
+                            </option>
+                          </select>
+                          <button type="button" id="deleteLabel" class="close" style="margin-left: 5px;" v-visible="deleteValid" @click="modalHandler().openDeleteLabel()">
+                            <span>&times;</span>
+                          </button>
+                        </div>
+                      </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" @closed="postModalClose" :modal-name="modal.name" :modal-header="modal.header">
         <template v-slot:content>
@@ -402,13 +430,29 @@ svg {
 
 #maindiv {
   text-align: left;
-  margin-top: 90px;
+}
+
+#instrSelect {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  width: 100%;
+}
+
+#labelInstr {
+  display: block;
+  float: left;
+  max-width: 40%;
+}
+
+#selectors {
+  display: block;
+  float: right;
+  padding-right: 15px;
 }
 
 #hoverbox {
   position: relative;
   float: right;
-  right: 3%;
   z-index: 5;
 }
 
@@ -419,15 +463,12 @@ svg {
   padding-bottom: 0px;
   width: 260px;
   border-color: #2c3e50;
+  top: 10px;
+  right: 30px;
 }
 
 #selector {
-  right: 2%;
-  margin-bottom: 10px;
-  text-align: left;
-  padding: 10px;
-  padding-top: 0px;
-  z-index: 2;
+  padding-right: 10%;
 }
 
 #pSeries {
@@ -443,7 +484,6 @@ svg {
 
 #lBox {
   display: inline-block;
-  margin-right: -10px !important;
 }
 
 #secondary_line {
@@ -460,7 +500,6 @@ svg {
 
 .mainChart {
   display: block;
-  margin-top: 30px;
 }
 
 .area {
