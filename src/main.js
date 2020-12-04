@@ -2,34 +2,27 @@
 // (runtime-only or standalone) has been set in webpack.base.conf with an alias.
 import Vue from 'vue'
 import App from './App'
-import VueRouter from 'vue-router'
-import Index from './components/Index'
-import Help from './components/Help'
-import Labeler from './components/Labeler'
-import License from './components/License'
+import VModal from 'vue-js-modal'
+import router from './router'
 
-require('expose-loader?$!expose-loader?jQuery!jquery')
-require('jquery-csv')
-require('popper.js')
-require('bootstrap')
-require('bootstrap/dist/css/bootstrap.min.css')
+require('expose-loader?$!expose-loader?jQuery!jquery');
+require('jquery-csv');
+require('popper.js');
+require('bootstrap');
+require('bootstrap/dist/css/bootstrap.min.css');
 
-Vue.use(VueRouter)
-const routes = [
-	{ name: 'home', path: '/', component: Index, props: true },
-	{ name: 'help', path: '/help', component: Help },
-	{ name: 'license', path: '/license', component: License },
-	{ name: 'labeler', path: '/labeler', component: Labeler, props: true }
-]
+// register global components (prefix 'Base'-)
+import '@/components/globals'
 
-const router = new VueRouter({
-	routes,
-	mode: 'history'
-})
+Vue.use(VModal);
+
+Vue.directive('visible', (el, binding) => {
+    el.style.visibility = !!binding.value ? 'visible' : 'hidden'
+});
 
 new Vue({
 	el: '#app',
 	template: '<App/>',
 	components: { App },
 	router
-}).$mount('#app')
+}).$mount('#app');
