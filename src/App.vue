@@ -7,7 +7,7 @@
 <script>
 export default {
   name: 'App'
-};
+}
 </script>
 
 <style>
@@ -19,11 +19,11 @@ export default {
   color: #2c3e50;
   margin-top: 65px !important;
 }
-.container { 
-  display: inline-block; 
-  padding-top: 75px !important; 
-  padding-right: 15px; 
-  padding-left: 15px; 
+.container {
+  display: inline-block;
+  padding-top: 75px !important;
+  padding-right: 15px;
+  padding-left: 15px;
   text-align: center;
 }
 </style>

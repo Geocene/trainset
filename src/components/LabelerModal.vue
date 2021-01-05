@@ -22,7 +22,7 @@
 
 <script>
 export default {
-  name: "LabelerModal",
+  name: 'LabelerModal',
   props: {
     modalName: String,
     modalHeader: String
@@ -31,51 +31,51 @@ export default {
     return {
       // vue class bindings
       exportColor: {
-        "header" : "exportHeader",
-        "content": "exportContent",
-        "button": "exportButton",
-        "modalBox": "exportBox"
+        'header': 'exportHeader',
+        'content': 'exportContent',
+        'button': 'exportButton',
+        'modalBox': 'exportBox'
       },
       defaultColor: {
-        "header" : "defaultHeader",
-        "content": "defaultContent",
-        "button": "defaultButton",
-        "modalBox": "defaultBox"
+        'header': 'defaultHeader',
+        'content': 'defaultContent',
+        'button': 'defaultButton',
+        'modalBox': 'defaultBox'
       },
-      singleBtn: "singleBtn",
-      dualBtn: "dualBtn",
+      singleBtn: 'singleBtn',
+      dualBtn: 'dualBtn',
       // handle clicking ok
       clickedOk: false
-    };
+    }
   },
   methods: {
-    emitClosed() {
-      this.$emit("closed", this.modalName);
+    emitClosed () {
+      this.$emit('closed', this.modalName)
     },
-    show() {
-      this.$modal.show("modalBox");
+    show () {
+      this.$modal.show('modalBox')
     },
-    hide() {
-      this.$modal.hide("modalBox");
+    hide () {
+      this.$modal.hide('modalBox')
     },
-    postOk() {
+    postOk () {
       // this.clickedOk = true;
-      this.hide();
-      this.$emit("clicked-ok", this.modalName);
+      this.hide()
+      this.$emit('clicked-ok', this.modalName)
     }
   },
   computed: {
-    isFailed: function() {
-      return this.modalName.includes("failed");
+    isFailed: function () {
+      return this.modalName.includes('failed')
     },
-    isExport: function() {
-      return this.modalName == "export";
+    isExport: function () {
+      return this.modalName === 'export'
     },
-    computedColor: function() {
-      return this.modalName == "export" ? this.exportColor : this.defaultColor;
+    computedColor: function () {
+      return this.modalName === 'export' ? this.exportColor : this.defaultColor
     }
   }
-};
+}
 </script>
 
 <style scoped>

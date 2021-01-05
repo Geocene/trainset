@@ -12,7 +12,7 @@
       </ul>
     </template>
     <template v-slot:main-content>
-      <div id="hoverbox"> 
+      <div id="hoverbox">
         <div id="hoverinfo" class="card chartText" style="display: none;">
           <div class="card-subtitle">Time: {{ hoverinfo.time }}</div>
           <div class="card-subtitle">Value: {{ hoverinfo.val }}</div>
@@ -25,21 +25,21 @@
         <div id="leftInstr">
             <div class="row">
               <div class="col" id="leftInstr">
-                <strong>How to Label Points</strong></br>
-                <strong>Click</strong> a point to toggle it as labeled</br>
-                <strong>Click & Drag</strong> over a selection of points to label them</br>
-                <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them</br>
+                <strong>How to Label Points</strong><br/>
+                <strong>Click</strong> a point to toggle it as labeled<br/>
+                <strong>Click & Drag</strong> over a selection of points to label them<br/>
+                <strong><kbd>SHIFT</kbd> + Click & Drag </strong> over a selection of points to unlabel them<br/>
               </div>
             </div>
         </div>
         <div id="rightInstr">
           <div class="row">
             <div class="col" id="rightInstr">
-              <strong>How to Navigate the Graph</strong></br>
-              <kbd>→</kbd> or <kbd>←</kbd> : pan</br>
-              <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan</br>
-              <kbd>↑</kbd> or <kbd>↓</kbd>: zoom</br>
-              <strong>Click & Drag</strong> the bottom context bar to adjust focus region</br>
+              <strong>How to Navigate the Graph</strong><br/>
+              <kbd>→</kbd> or <kbd>←</kbd> : pan<br/>
+              <kbd>SHIFT</kbd> + <kbd>→</kbd> or <kbd>←</kbd> : fast pan<br/>
+              <kbd>↑</kbd> or <kbd>↓</kbd>: zoom<br/>
+              <strong>Click & Drag</strong> the bottom context bar to adjust focus region<br/>
             </div>
           </div>
         </div>
@@ -81,26 +81,26 @@
 
       <LabelerModal id="modal" ref="modalComponent" @clicked-ok="modalOk" @closed="postModalClose" :modal-name="modal.name" :modal-header="modal.header">
         <template v-slot:content>
-          <template v-if="modal.name == 'edit'">
-            <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/> 
-            - 
+          <template v-if="modal.name === 'edit'">
+            <input type="text" class="bounds" id="lowBounds" v-model="axisBounds[0]"/>
+            -
             <input type="text" class="bounds" id="highBounds" v-model="axisBounds[1]"/>
           </template>
-          <template v-else-if="modal.name == 'clear'">
+          <template v-else-if="modal.name === 'clear'">
             All labels from this series will be erased. This cannot be undone.
           </template>
           <template v-else-if="modal.name.includes('failed')">
             {{ modal.failMessage }}
             <!-- Make sure data is in the TRAINSET format. See help. -->
           </template>
-          <template v-else-if="modal.name == 'export'">
+          <template v-else-if="modal.name === 'export'">
             Upload new data set or continue labeling this one?
           </template>
-          <template v-else-if="modal.name == 'delete'">
+          <template v-else-if="modal.name === 'delete'">
             Are you sure you want to delete label: {{ selectedLabel }}
           </template>
-          <template v-else-if="modal.name == 'add'">
-            <input type="text" id="inputLabel" v-model="inputLabel"/> 
+          <template v-else-if="modal.name === 'add'">
+            <input type="text" id="inputLabel" v-model="inputLabel"/>
           </template>
         </template>
       </LabelerModal>
@@ -117,16 +117,16 @@
 </template>
 
 <script>
-import * as LabelerD3 from "@/assets/js/LabelerD3.js"
-import colorMixin from "@/mixins/LabelerColor.js"
-import LabelerModal from "@/components/LabelerModal"
-import LabelerInstruction from "@/components/LabelerInstruction"
+import * as LabelerD3 from '@/assets/js/LabelerD3.js'
+import colorMixin from '@/mixins/LabelerColor.js'
+import LabelerModal from '@/components/LabelerModal'
+import LabelerInstruction from '@/components/LabelerInstruction'
 
 // plotting app namespace
-var plottingApp = {};
+var plottingApp = {}
 
 export default {
-  name: "labeler",
+  name: 'labeler',
   components: {
     LabelerModal,
     LabelerInstruction
@@ -140,284 +140,285 @@ export default {
     labelList: Array,
     isValid: Boolean
   },
-  data: function() {
+  data: function () {
     return {
       hoverinfo: {
-        val: "",
-        time: "",
-        label: "",
+        val: '',
+        time: '',
+        label: ''
       },
       modal: {
-        name: "",
-        header: "",
-        failMessage: ""
+        name: '',
+        header: '',
+        failMessage: ''
       },
-      selectedLabel: "",
-      inputLabel: "",
+      selectedLabel: '',
+      inputLabel: '',
       axisBounds: [],
       optionsList: []
-    };
+    }
   },
-  mounted: function() {
+  mounted: function () {
     if (this.isValid) {
-      plottingApp.headerStr = this.headerStr;
-      plottingApp.filename = this.filename;
-      plottingApp.csvData = this.csvData;
-      plottingApp.seriesList = this.seriesList;
-      plottingApp.labelList = this.labelList.sort();
-      $("#maindiv").append("<div class=\"loader\"></div>");
+      plottingApp.headerStr = this.headerStr
+      plottingApp.filename = this.filename
+      plottingApp.csvData = this.csvData
+      plottingApp.seriesList = this.seriesList
+      plottingApp.labelList = this.labelList.sort()
+      $('#maindiv').append('<div class="loader"></div>')
 
       // populate selectors
-      this.handleSelector();
+      this.handleSelector()
 
-      LabelerD3.drawLabeler(plottingApp);
+      LabelerD3.drawLabeler(plottingApp)
     } else {
-      $("#clear").hide();
-      $("#export").hide();
-      $("#hoverbox").hide();
-      $("#labelInstr").hide();
-      this.modalHandler().openUploadFailed();
+      $('#clear').hide()
+      $('#export').hide()
+      $('#hoverbox').hide()
+      $('#labelInstr').hide()
+      this.modalHandler().openUploadFailed()
     }
   },
   watch: {
     // propogate selectedLabel to plottingApp
-    selectedLabel: function(newLabel, oldLabel) {
-      plottingApp.selectedLabel = newLabel;
+    selectedLabel: function (newLabel, oldLabel) {
+      plottingApp.selectedLabel = newLabel
     }
   },
   computed: {
     // determines if delete button should be visible
-    deleteValid: function() {
-      return !(this.optionsList.length == 1)
+    deleteValid: function () {
+      return !(this.optionsList.length === 1)
     }
   },
   methods: {
     // return to Index.vue
-    routeHandler: function() {
-      var self = this;
+    routeHandler: function () {
+      var self = this
       return {
         // push home to vue router
-        goHome: function() {
-          self.$router.push({ name: "home", params: {nextUp: false} });
+        goHome: function () {
+          self.$router.push({ name: 'home', params: {nextUp: false} })
         },
         // push home with new upload to vue router
-        newUpload: function() {
-          self.$router.push({ name: "home", params: {nextUp: true} });
+        newUpload: function () {
+          self.$router.push({ name: 'home', params: {nextUp: true} })
         },
         // open Index.vue in new window
-        newHome: function() {
-          let routeData = self.$router.resolve({ name: "home", params: {nextUp: false} });
-          window.open(routeData.href, "_blank");
+        newHome: function () {
+          let routeData = self.$router.resolve({ name: 'home', params: {nextUp: false} })
+          window.open(routeData.href, '_blank')
         },
         // open Help.vue in new window
-        newHelp: function() {
-          var routeData = self.$router.resolve({ name: "help" });
-          window.open(routeData.href, "_blank");
+        newHelp: function () {
+          var routeData = self.$router.resolve({ name: 'help' })
+          window.open(routeData.href, '_blank')
         },
         // open License.vue in new window
-        newLicense: function() {
-          var routeData = self.$router.resolve({ name: "license" });
-          window.open(routeData.href, "_blank");
-        },
+        newLicense: function () {
+          var routeData = self.$router.resolve({ name: 'license' })
+          window.open(routeData.href, '_blank')
+        }
       }
     },
-    modalHandler: function() {
-      var self = this;
+    modalHandler: function () {
+      var self = this
       return {
-        openClear: function() {
-          self.modal.name = "clear";
-          self.modal.header = "Clear all labels?";
-          self.$refs.modalComponent.show();
+        openClear: function () {
+          self.modal.name = 'clear'
+          self.modal.header = 'Clear all labels?'
+          self.$refs.modalComponent.show()
         },
-        openEdit: function() {
-          self.axisBounds = plottingApp.axisBounds[plottingApp.editSeries].slice(0);
-          self.modal.name = "edit";
-          self.modal.header = "Edit Axis Bounds";
-          self.$refs.modalComponent.show();
+        openEdit: function () {
+          self.axisBounds = plottingApp.axisBounds[plottingApp.editSeries].slice(0)
+          self.modal.name = 'edit'
+          self.modal.header = 'Edit Axis Bounds'
+          self.$refs.modalComponent.show()
         },
-        openExport: function() {
-          self.modal.name = "export";
-          self.modal.header = "Export complete";
-          self.$refs.modalComponent.show();
+        openExport: function () {
+          self.modal.name = 'export'
+          self.modal.header = 'Export complete'
+          self.$refs.modalComponent.show()
         },
-        openDeleteLabel: function() {
-          self.modal.name = "delete";
-          self.modal.header = "Delete label?";
-          self.$refs.modalComponent.show();
+        openDeleteLabel: function () {
+          self.modal.name = 'delete'
+          self.modal.header = 'Delete label?'
+          self.$refs.modalComponent.show()
         },
-        openAddLabel: function() {
-          self.modal.name = "add";
-          self.modal.header = "Add label";
-          self.$refs.modalComponent.show();
+        openAddLabel: function () {
+          self.modal.name = 'add'
+          self.modal.header = 'Add label'
+          self.$refs.modalComponent.show()
         },
-        openUploadFailed: function() {
-          self.modal.name = "upload_failed";
-          self.modal.header = "Upload Failed";
-          self.modal.failMessage = "Make sure data is in the TRAINSET format. See help.";
-          self.$refs.modalComponent.show();
+        openUploadFailed: function () {
+          self.modal.name = 'upload_failed'
+          self.modal.header = 'Upload Failed'
+          self.modal.failMessage = 'Make sure data is in the TRAINSET format. See help.'
+          self.$refs.modalComponent.show()
         },
-        openAxisFailed: function() {
-          self.modal.name = "axis_failed";
-          self.modal.header = "Invalid Bounds";
-          self.modal.failMessage = "Make sure input bounds are numbers.";
-          self.$refs.modalComponent.show();
+        openAxisFailed: function () {
+          self.modal.name = 'axis_failed'
+          self.modal.header = 'Invalid Bounds'
+          self.modal.failMessage = 'Make sure input bounds are numbers.'
+          self.$refs.modalComponent.show()
         },
-        openLabelFailed: function() {
-          self.modal.name = "label_failed";
-          self.modal.header = "Invalid Label";
-          self.modal.failMessage = "Labels can only contain ≤16 letters, numbers, hyphens, or underscores. Example: my_good_label-1";
-          self.$refs.modalComponent.show();
+        openLabelFailed: function () {
+          self.modal.name = 'label_failed'
+          self.modal.header = 'Invalid Label'
+          self.modal.failMessage = 'Labels can only contain ≤16 letters, numbers, hyphens, or underscores. Example: my_good_label-1'
+          self.$refs.modalComponent.show()
         },
-        openLabelExistsFailed: function() {
-          self.modal.name = "label_failed";
-          self.modal.header = "Invalid Label";
-          self.modal.failMessage = "Label already exists.";
-          self.$refs.modalComponent.show();
+        openLabelExistsFailed: function () {
+          self.modal.name = 'label_failed'
+          self.modal.header = 'Invalid Label'
+          self.modal.failMessage = 'Label already exists.'
+          self.$refs.modalComponent.show()
         }
       }
     },
     // update #hoverinfo data
-    updateHoverinfo() {
-      this.hoverinfo.time = plottingApp.hoverinfo.time;
-      this.hoverinfo.val = plottingApp.hoverinfo.val;
-      this.hoverinfo.label = plottingApp.hoverinfo.label;
+    updateHoverinfo () {
+      this.hoverinfo.time = plottingApp.hoverinfo.time
+      this.hoverinfo.val = plottingApp.hoverinfo.val
+      this.hoverinfo.label = plottingApp.hoverinfo.label
     },
     // update selected label with plottingApp.selectedLabel
-    updateSelectedLabel() {
-      this.selectedLabel = plottingApp.selectedLabel;
+    updateSelectedLabel () {
+      this.selectedLabel = plottingApp.selectedLabel
     },
     // return index in sorted labelList to add item
-    searchLabelList(array, item) {
-      if (array[0]["name"] > item) {
+    searchLabelList (array, item) {
+      if (array[0]['name'] > item) {
         return 0
       }
-      var i = 1;
-      while (i < array.length && !(array[i]["name"] > item && array[i-1]["name"] <= item)) {
-          i = i + 1;
+      var i = 1
+      while (i < array.length && !(array[i]['name'] > item && array[i - 1]['name'] <= item)) {
+        i = i + 1
       }
-      return i;
+      return i
     },
     // add label in correct spot and handle delete button
-    addLabel() {
-      var inputIndex = this.searchLabelList(this.optionsList, this.inputLabel);
-      this.optionsList.splice(inputIndex, 0, this.mapToColor(this.inputLabel));
-      this.selectedLabel = this.optionsList[inputIndex].name;
+    addLabel () {
+      var inputIndex = this.searchLabelList(this.optionsList, this.inputLabel)
+      this.optionsList.splice(inputIndex, 0, this.mapToColor(this.inputLabel))
+      this.selectedLabel = this.optionsList[inputIndex].name
     },
     // remove label
-    removeLabel() {
-      var toDelete = $("#labelSelect option:selected").attr("name"),
-      delIndex = this.optionsList.map(l => l.name).indexOf(toDelete);
-      if (delIndex != -1) {
-        var deleted = this.optionsList.splice(delIndex, 1)[0];
-        this.deleteColor(deleted.color);
+    removeLabel () {
+      var toDelete = $('#labelSelect option:selected').attr('name')
+      var delIndex = this.optionsList.map(l => l.name).indexOf(toDelete)
+      if (delIndex !== -1) {
+        var deleted = this.optionsList.splice(delIndex, 1)[0]
+        this.deleteColor(deleted.color)
         // remove label from plottingApp.allData
-        plottingApp.allData.filter(d => d.label == deleted.name).map(d => d.label = "");
-        this.selectedLabel = this.optionsList[0].name;
-        $("#triggerRecolor").click();
+        plottingApp.allData.filter(d => d.label === deleted.name).forEach((d) => {
+          d.label = ''
+        })
+        this.selectedLabel = this.optionsList[0].name
+        $('#triggerRecolor').click()
       } else {
-        alert("failed to remove");
+        alert('failed to remove')
       }
     },
     // validate axis bounds
-    validBounds(bounds) {
-      var valid = true;
-      if (isNaN(bounds[0]) || isNaN(bounds[1]) || (bounds[0] == bounds[1])) {
-        valid = false;
+    validBounds (bounds) {
+      var valid = true
+      if (isNaN(bounds[0]) || isNaN(bounds[1]) || (bounds[0] === bounds[1])) {
+        valid = false
       }
-      return valid;
+      return valid
     },
     // validate label
-    validLabel(label) {
-      return label.length > 0 
-            && !(this.containsLabel(this.inputLabel)) 
-            && (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel)) 
+    validLabel (label) {
+      return label.length > 0 &&
+            !(this.containsLabel(this.inputLabel)) &&
+            (/^[a-zA-Z0-9_-]{0,16}$/.test(this.inputLabel))
     },
-    containsLabel(label) {
+    containsLabel (label) {
       for (var key in this.optionsList) {
-        var labelObj = this.optionsList[key];
-        if (labelObj.name == label) {
+        var labelObj = this.optionsList[key]
+        if (labelObj.name === label) {
           return true
         }
       }
       return false
     },
     // handle modal post-close actions (for failed popup modal)
-    postModalClose(modal_name) {
-      if (this.renderModal == "failed_axis") {
-        this.$nextTick(() => this.modalHandler().openAxisFailed());
-      } else if (this.renderModal == "failed_label") {
-        this.$nextTick(() => this.modalHandler().openLabelFailed());
-      } else if (this.renderModal == "failed_label_exists") {
-        this.$nextTick(() => this.modalHandler().openLabelExistsFailed());
+    postModalClose (modal_name) {
+      if (this.renderModal === 'failed_axis') {
+        this.$nextTick(() => this.modalHandler().openAxisFailed())
+      } else if (this.renderModal === 'failed_label') {
+        this.$nextTick(() => this.modalHandler().openLabelFailed())
+      } else if (this.renderModal === 'failed_label_exists') {
+        this.$nextTick(() => this.modalHandler().openLabelExistsFailed())
       }
-      this.renderModal = "";
+      this.renderModal = ''
     },
     // handle modal ok click
-    modalOk(modal_name) {
-      if (modal_name == "clear") {
-        $("#clearSeries").click();
-      } else if (modal_name == "export") {
-        this.routeHandler().newUpload();
-      } else if (modal_name == "upload_failed") {
-        this.routeHandler().goHome();
-      } else if (modal_name == "delete") {
-        this.removeLabel();
-      } else if (modal_name == "edit") {
+    modalOk (modal_name) {
+      if (modal_name === 'clear') {
+        $('#clearSeries').click()
+      } else if (modal_name === 'export') {
+        this.routeHandler().newUpload()
+      } else if (modal_name === 'upload_failed') {
+        this.routeHandler().goHome()
+      } else if (modal_name === 'delete') {
+        this.removeLabel()
+      } else if (modal_name === 'edit') {
         // check validity of axisBounds
         if (this.validBounds(this.axisBounds)) {
-          plottingApp.axisBounds[plottingApp.editSeries] = this.axisBounds.slice(0);
-          $("#triggerReplot").click();
+          plottingApp.axisBounds[plottingApp.editSeries] = this.axisBounds.slice(0)
+          $('#triggerReplot').click()
         } else {
-          this.renderModal = "failed_axis";
+          this.renderModal = 'failed_axis'
         }
-      } else if (modal_name == "add") {
+      } else if (modal_name === 'add') {
         // check validity of inputLabel
         if (this.validLabel(this.inputLabel)) {
-          this.addLabel();
-        } else  {
+          this.addLabel()
+        } else {
           if (this.containsLabel(this.inputLabel)) {
-            this.renderModal = "failed_label_exists";
+            this.renderModal = 'failed_label_exists'
           } else {
-            this.renderModal = "failed_label";
+            this.renderModal = 'failed_label'
           }
         }
       }
     },
     // map label to unique color
-    mapToColor(label) {
-      var color = this.generateNextColor();
-      return {name: label, color: color};
+    mapToColor (label) {
+      var color = this.generateNextColor()
+      return {name: label, color: color}
     },
     // remove color from used colors
-    deleteColor(color) {
+    deleteColor (color) {
       this.setUnusedColor(color)
     },
     // build series selector using seriesList
-    handleSelector() {
+    handleSelector () {
       // populate series selector
-      $.each(plottingApp.seriesList, function(i, p) {
-        $("#seriesSelect").append($("<option></option>").val(p).html(p));
-        $("#referenceSelect").append($("<option></option>").val(p).html(p));
-      });
+      $.each(plottingApp.seriesList, function (i, p) {
+        $('#seriesSelect').append($('<option></option>').val(p).html(p))
+        $('#referenceSelect').append($('<option></option>').val(p).html(p))
+      })
       // if theres only one series, omit selectors
-      if (plottingApp.seriesList.length == 1) {
-        $("#seriesSelector").hide();
-        $("#labelSelector").css("margin-right", "0px");
+      if (plottingApp.seriesList.length === 1) {
+        $('#seriesSelector').hide()
+        $('#labelSelector').css('margin-right', '0px')
       }
       // if there no labels, use label_1
-      if (plottingApp.labelList.length == 0) {
-        plottingApp.labelList.push("label_1");
+      if (plottingApp.labelList.length === 0) {
+        plottingApp.labelList.push('label_1')
       }
-      this.optionsList = plottingApp.labelList.map(l => this.mapToColor(l));
-      plottingApp.labelList = this.optionsList;
-      this.selectedLabel = this.optionsList[0].name;
+      this.optionsList = plottingApp.labelList.map(l => this.mapToColor(l))
+      plottingApp.labelList = this.optionsList
+      this.selectedLabel = this.optionsList[0].name
 
-      // set hoverinfo right margin 
+      // set hoverinfo right margin
       // TODO: MOVE HOVERINFO OVER
-
     }
   }
-};
+}
 </script>
 
 <style>
