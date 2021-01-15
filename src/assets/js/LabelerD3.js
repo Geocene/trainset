@@ -601,7 +601,7 @@ export function drawLabeler (plottingApp) {
           } else {
             d.label = ((d.time >= brush_xmin) && (d.time <= brush_xmax) && (d.val >= brush_ymin) && (d.val <= brush_ymax)) ? '' : d.label
           }
-        } while ((node = node.next) !== null)
+        } while (node = node.next) // eslint-disable-line no-cond-assign
       }
 
       // return true if current quadtree rectangle intersects with brush (looks deeper in tree if true)
@@ -795,7 +795,7 @@ export function drawLabeler (plottingApp) {
       if (!node.length) {
         do {
           node.data.label = ''
-        } while ((node = node.next) !== null)
+        } while (node = node.next) // eslint-disable-line no-cond-assign
       }
       return false
     })
