@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-lg fixed-top">
     <slot name="nav-content">
-      <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET<img id="logo" src="/static/trainset_logo.png"></router-link></h1>
+      <h1 class="navbar-brand"><router-link class="homeLink" v-bind:to="'/'">TRAINSET <img id="logo" src="/static/preligens_logo.png"></router-link></h1>
       <div class="navbar-nav ml-auto">
         <router-link class="nav-link" v-bind:to="'/help'">Help</router-link>
         <router-link class="nav-link" v-bind:to="'/license'">License</router-link>

@@ -24,7 +24,7 @@ d3.selection.prototype.first = function() {
 d3.selection.prototype.last = function() {
   return d3.select(this.nodes()[this.size() - 1]);
 };
-
+var k = 1
 export function drawLabeler(plottingApp) {
   //margins
   plottingApp.main_margin = {top: 10, right: 120, bottom: 100, left: 90},
@@ -147,6 +147,7 @@ export function drawLabeler(plottingApp) {
   function init() {
     plottingApp.allData = plottingApp.csvData.map(type);
     plottingApp.data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
+    plottingApp.available_data = [plottingApp.data[0]]
 
     // get default focus
     var defaultExtent = getDefaultExtent();
@@ -371,7 +372,7 @@ export function drawLabeler(plottingApp) {
     // subset to only data in current domain
     var x_domain = plottingApp.main_xscale.domain();
 
-    var  main_data = plottingApp.data.filter(function(d){
+    var  main_data = plottingApp.available_data.filter(function(d){
       return x_domain[0] <= d.time & d.time <= x_domain[1]
     });
 
@@ -468,7 +469,7 @@ export function drawLabeler(plottingApp) {
     plottingApp.quadtree = d3.quadtree()
               .x(function(d) { return d.time; })
               .y(function(d) { return d.val; })
-              .addAll(plottingApp.data);
+              .addAll(plottingApp.available_data);
 
     // Downsample context data for big datasets
     var sampler = largestTriangleThreeBucket();
@@ -479,14 +480,14 @@ export function drawLabeler(plottingApp) {
 
     // Configure the size of the buckets used to downsample the data.
     // Have at most 1000 context points
-    var bucket_size = Math.max(Math.round(plottingApp.data.length / 1000), 1);
+    var bucket_size = Math.max(Math.round(plottingApp.available_data.length / 1000), 1);
 
     // bump bucket size if 2 (doesn't preserve outliers)
     // bucket_size = (bucket_size == 2) ? bucket_size + 1 : bucket_size;
 
     sampler.bucketSize(bucket_size);
     
-    plottingApp.context_data = sampler(plottingApp.data);
+    plottingApp.context_data = sampler(plottingApp.available_data);
   }
 
   function createInView(domain) {
@@ -516,9 +517,9 @@ export function drawLabeler(plottingApp) {
 
   function limitContext() {
     var s = d3.brushSelection(plottingApp.plot.context_brush.node()).map(plottingApp.context_xscale.invert, plottingApp.context_xscale);
-    var brushData = plottingApp.data.filter(createInView(s));
+    var brushData = plottingApp.available_data.filter(createInView(s));
     if (brushData.length >= 2000) {
-      var firstIndex = plottingApp.data.map(function(d) { return d.time; }).indexOf(s[0]);
+      var firstIndex = plottingApp.available_data.map(function(d) { return d.time; }).indexOf(s[0]);
     }
   }
 
@@ -745,16 +746,16 @@ export function drawLabeler(plottingApp) {
 
   /* calculate default extent based on data length */
   function getDefaultExtent() {
-    var start_date = plottingApp.data[0].time,
-    d_len = plottingApp.data.length, end_date;
+    var start_date = plottingApp.available_data[0].time,
+    d_len = plottingApp.available_data.length, end_date;
     if (d_len <= 100) {
-      end_date = plottingApp.data[d_len - 1].time;
+      end_date = plottingApp.available_data[d_len - 1].time;
     } else if (d_len <= 1000) {
-      end_date = plottingApp.data[100].time;
+      end_date = plottingApp.available_data[100].time;
     } else if (d_len >= 10000) {
-      end_date = plottingApp.data[1000].time;
+      end_date = plottingApp.available_data[1000].time;
     } else {
-      end_date = plottingApp.data[Math.round((d_len - 1) / 10)].time;
+      end_date = plottingApp.available_data[Math.round((d_len - 1) / 10)].time;
     }
     return [start_date, end_date]
   }
@@ -778,7 +779,7 @@ export function drawLabeler(plottingApp) {
 
   $("#seriesSelect").change(function() {
     plottingApp.selectedSeries = $("#seriesSelect option:selected").val();
-    plottingApp.data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
+    plottingApp.available_data = plottingApp.allData.filter(d => d.series == plottingApp.selectedSeries);
     replot();
   });
 
@@ -852,25 +853,44 @@ export function drawLabeler(plottingApp) {
     var code = d3.event.keyCode;
     if (code == 38) {
       // handle up arrowkey
-      transformContext(0, -2);
-      d3.event.preventDefault();
+      // transformContext(0, -2);
+      // d3.event.preventDefault();
+      k += 1
+      plottingApp.available_data = plottingApp.data.slice(0, k)
+
+      plottingApp.context_xscale.domain(padExtent(d3.extent(
+        plottingApp.available_data.map(function(d) { return d.time; })))); // xaxis set according to allData
+      plottingApp.main_xscale.domain(padExtent(d3.extent(
+        plottingApp.available_data.map(function(d) { return d.time; })))); 
+      replot();
     } else if (code == 40) {
       // handle down arrowkey
-      transformContext(0, 2);
-      d3.event.preventDefault();
+      k -= 1
+      if (k < 1){
+        k = 1
+      }
+  
+      plottingApp.available_data = plottingApp.data.slice(0, k)
+      plottingApp.context_xscale.domain(padExtent(d3.extent(
+        plottingApp.available_data.map(function(d) { return d.time; })))); // xaxis set according to allData
+      plottingApp.main_xscale.domain(padExtent(d3.extent(
+        plottingApp.available_data.map(function(d) { return d.time; })))); 
+      replot();
+      // transformContext(0, 2);
+      // d3.event.preventDefault();
     } else if (code === 37) {
       // handle left arrowkey
       if (plottingApp.shiftKey) {
-        transformContext(-9, 0);
+        // transformContext(-9, 0);
       } else {
-        transformContext(-1, 0);
+        // transformContext(-1, 0);
       }
     } else if (code === 39) {
       // handle right arrowkey
       if (plottingApp.shiftKey) {
-        transformContext(9, 0);
+        // transformContext(9, 0);
       } else {
-        transformContext(1, 0);
+        // transformContext(1, 0);
       }
     } else if (code == 76) {
       // handle 'l' press over hoverinfo
