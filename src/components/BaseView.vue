@@ -12,8 +12,8 @@
 
 <script>
 export default {
-  name: "BaseView"
-};
+  name: 'BaseView'
+}
 </script>
 
 <style scoped>

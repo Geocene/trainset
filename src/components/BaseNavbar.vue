@@ -12,8 +12,8 @@
 
 <script>
 export default {
-  name: "BaseNavbar"
-};
+  name: 'BaseNavbar'
+}
 </script>
 
 <style scoped>
