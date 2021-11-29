@@ -401,10 +401,7 @@ export default {
       });
       // if theres only one series, omit selectors
       if (plottingApp.seriesList.length == 1) {
-        $("#pSeries").hide();
-        $("#rSeries").hide();
-        $("#seriesSelect").hide();
-        $("#referenceSelect").hide();
+        $("#seriesSelector").hide();
         $("#labelSelector").css("margin-right", "0px");
       }
       // if there no labels, use label_1
