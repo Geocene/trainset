@@ -75,11 +75,13 @@ export default {
         fileText = $.csv.toArrays(reader.result);
         headerStr = fileText[0].toString();
         for (var i = 1; i < fileText.length ; i++) {
+          var dateMatches = fileText[i][1].match(/^((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
+          var labelMatches = fileText[i][3].match(/^[a-zA-Z0-9_-]{0,16}$/)
+          var parsedValue = Number(fileText[i][2]).toString()
           if (fileText[i].length === 4 
-            && fileText[i][1].match(/^((\d{4})-(\d{2})-(\d{2})T(\d{2})\:(\d{2})\:(\d{2})(.(\d{3}))?(([+-](\d{2})\:?(\d{2}))|Z))$/)
-            && fileText[i][2].match(/^-?\d+(.\d+)?$/)
-            && fileText[i][3].match(/^[a-zA-Z0-9_-]{0,16}$/)
-            /* && fileText[i][0].includes(filename) */) {
+            && dateMatches
+            && labelMatches
+            && parsedValue !== Number.NaN) {
             var date = DateTime.fromISO(fileText[i][1], {setZone: true});
             var series = fileText[i][0];
             seriesList.add(series);
@@ -88,7 +90,7 @@ export default {
             }
             plotDict.push({
               'id': id.toString(),
-              'val': Number(fileText[i][2]).toString(),
+              'val': parsedValue,
               'time': date,
               'series': series,
               'label': fileText[i][3]
@@ -96,13 +98,13 @@ export default {
             id++;
           } else {
             if (!(fileText[i].length === 4)) {
-              console.log('line parse error');
-            } else if (!fileText[i][2].match(/-?\d+(.\d+)?$/)) {
-              console.log('val parse error');
-            } else if (!fileText[i][3].match(/^[a-zA-Z0-9_-]{0,16}$/)) {
-              console.log('label parse error');
+              console.log('line parse error in line ' + (i+1));
+            } else if (!labelMatches) {
+              console.log('label parse error in line ' + (i+1));
+            } else if (parsedValue === Number.NaN) {
+              console.log('value parse error in line ' + (i+1));
             } else {
-              console.log('date parse error');
+              console.log('date parse error in line ' + (i+1));
             }
             this.error();
             break;
