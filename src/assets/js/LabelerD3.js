@@ -762,7 +762,10 @@ export function drawLabeler(plottingApp) {
   /* return the bounds of the given y axis */
   function getMinMax(axis) {
     var y_vals = plottingApp.allData.filter(d => d.series == axis).map(d => d.val),
-    minMax = [Math.min.apply(Math, y_vals), Math.max.apply(Math, y_vals)];
+    minMax = y_vals.reduce(([min, max], val) => [Math.min(min, val), Math.max(max, val)], [
+      Number.POSITIVE_INFINITY,
+      Number.NEGATIVE_INFINITY,
+    ]);
     return padExtent(minMax, 0.1);
   }
 
