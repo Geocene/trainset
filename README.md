@@ -4,6 +4,11 @@ TRAINSET is a graphical tool for labeling time series data. You can upload multi
 
 ![TRAINSET labeling GIF](https://user-images.githubusercontent.com/8713574/112393077-b1832d80-8cb7-11eb-811b-0a7200be658d.gif)
 
+
+## Hosted Version
+
+If you just want to use TRAINSET and don't want to mess with deploying it, head to the [hosted version](https://trainset.geocene.com)
+
 ## Build Setup
 
 ``` bash
