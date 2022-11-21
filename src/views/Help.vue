@@ -4,7 +4,7 @@
     	<div class="info">
   	    <h3 class="mb-5 title">Help with TRAINSET</h3>
   	    <h5 class="text-uppercase text-left subh">Input data format</h5>
-  	    <p class='text-left'>TRAINSET only accepts specific file formats. This <a href="/static/sample_trainset.csv" download>sample CSV</a> is formatted correctly. Files uploaded to TRAINSET must have four comma-delimited columms with the header: <code>filename, timestamp, value, label</code>; <code>null</code> data are not allowed.</p>
+  	    <p class='text-left'>TRAINSET only accepts specific file formats. This <a href="/static/files/sample_trainset.csv" download>sample CSV</a> is formatted correctly. Files uploaded to TRAINSET must have four comma-delimited columms with the header: <code>series, timestamp, value, label</code>; <code>null</code> data are not allowed.</p>
 
   	    <div class='text-left'>
   		    <ul style="list-style-type:square;">
