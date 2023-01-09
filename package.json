@@ -22,7 +22,7 @@
     "express": "^4.17.1",
     "jquery": "^3.5.1",
     "jquery-csv": "^0.8.12",
-    "luxon": "^1.25.0",
+    "luxon": "^2.5.2",
     "popper.js": "^1.16.1",
     "ssl-express-www": "^3.0.7",
     "strftime": "^0.10.0",
