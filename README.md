@@ -11,6 +11,9 @@ If you just want to use TRAINSET and don't want to mess with deploying it, head 
 
 ## Build Setup
 
+This project works with modern versions of Node.js (v10 or later). Ensure you
+have an up‑to‑date Node and npm installed before running the commands below.
+
 ``` bash
 # install dependencies
 npm install
