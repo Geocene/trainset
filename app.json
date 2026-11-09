@@ -1,0 +1,10 @@
+{
+  "name": "TRAINSET",
+  "description": "A web application for labeling time series data.",
+  "stack": "heroku-26",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}

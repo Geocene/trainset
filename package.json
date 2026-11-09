@@ -8,7 +8,8 @@
     "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
     "start": "node server.js",
     "lint": "eslint --ext .js,.vue src",
-    "build": "node build/build.js"
+    "build": "node build/build.js",
+    "test": "node --test test/server.test.js"
   },
   "dependencies": {
     "bootstrap": "^4.5.2",
@@ -68,20 +69,20 @@
     "rimraf": "^2.7.1",
     "semver": "^5.7.1",
     "shelljs": "^0.7.6",
-    "uglifyjs-webpack-plugin": "^1.1.1",
+    "terser-webpack-plugin": "^4.2.3",
     "url-loader": "^3.0.0",
     "vue-loader": "^14.2.2",
     "vue-style-loader": "^3.0.1",
     "vue-template-compiler": "^2.6.12",
-    "webpack": "^4.44.1",
+    "webpack": "^4.47.0",
     "webpack-bundle-analyzer": "^3.8.0",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
     "webpack-merge": "^4.2.2"
   },
   "engines": {
-    "node": "^10.15.1",
-    "npm": "6.x"
+    "node": "24.x",
+    "npm": "11.x"
   },
   "browserslist": [
     "> 1%",
